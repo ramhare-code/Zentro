@@ -1,0 +1,4530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
+<title>Zentro — Everything. One Place.</title>
+
+<style>
+
+/* =========================================================
+   ZENTRO
+   CUSTOMER WEBSITE
+   ========================================================= */
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+:root{
+    --purple:#6d35d4;
+    --purple-dark:#4d1fa8;
+    --purple-light:#eee6ff;
+    --blue:#dff4ff;
+    --blue-2:#eefaff;
+    --text:#17171b;
+    --muted:#686875;
+    --white:#ffffff;
+    --background:#f6f7fb;
+    --border:#e7e7ee;
+    --green:#14854f;
+    --red:#d92d20;
+    --orange:#ff9f1c;
+
+    --shadow:
+        0 8px 30px rgba(20,20,40,.10);
+
+    --shadow-small:
+        0 4px 16px rgba(20,20,40,.08);
+}
+
+html{
+    width:100%;
+    min-height:100%;
+    scroll-behavior:smooth;
+}
+
+body{
+    width:100%;
+    min-height:100vh;
+    margin:0;
+
+    font-family:
+        Inter,
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:var(--background);
+    color:var(--text);
+
+    overflow-x:hidden;
+}
+
+button,
+input,
+select{
+    font:inherit;
+}
+
+button{
+    border:none;
+    cursor:pointer;
+}
+
+img{
+    display:block;
+    max-width:100%;
+}
+
+.hidden{
+    display:none !important;
+}
+
+
+/* =========================================================
+   SCREEN SYSTEM
+   IMPORTANT:
+   THESE ARE NOT ALL DISPLAYED AT ONCE
+   ========================================================= */
+
+.screen{
+    display:none;
+
+    width:100%;
+    min-height:100dvh;
+
+    animation:
+        screenEnter .42s ease both;
+}
+
+.screen.active{
+    display:block;
+}
+
+@keyframes screenEnter{
+
+    from{
+        opacity:0;
+        transform:translateY(16px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+
+/* =========================================================
+   COMMON BUTTONS
+   ========================================================= */
+
+.primary-btn{
+
+    width:100%;
+
+    padding:15px 20px;
+
+    border-radius:16px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--purple),
+            var(--purple-dark)
+        );
+
+    color:white;
+
+    font-weight:800;
+    font-size:16px;
+
+    box-shadow:
+        0 8px 22px rgba(109,53,212,.25);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+.primary-btn:active{
+    transform:scale(.98);
+}
+
+.secondary-btn{
+
+    width:100%;
+
+    padding:14px 18px;
+
+    border-radius:16px;
+
+    background:white;
+
+    border:1px solid var(--border);
+
+    color:var(--text);
+
+    font-weight:700;
+}
+
+.icon-btn{
+
+    width:42px;
+    height:42px;
+
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:white;
+
+    box-shadow:var(--shadow-small);
+
+    font-size:20px;
+}
+
+
+/* =========================================================
+   ZENTRO LOGO
+   ========================================================= */
+
+.zentro-logo{
+
+    display:flex;
+    flex-direction:column;
+
+    align-items:center;
+    justify-content:center;
+}
+
+.zentro-z{
+
+    position:relative;
+
+    font-size:84px;
+    line-height:.8;
+
+    font-weight:1000;
+
+    color:var(--purple);
+
+    letter-spacing:-8px;
+}
+
+.zentro-smile{
+
+    width:82px;
+    height:35px;
+
+    margin-top:4px;
+
+    border-bottom:
+        8px solid var(--purple);
+
+    border-radius:
+        0 0 70px 70px;
+
+    position:relative;
+
+    transform:rotate(-3deg);
+}
+
+.zentro-smile::after{
+
+    content:"";
+
+    position:absolute;
+
+    right:-3px;
+    bottom:-9px;
+
+    width:0;
+    height:0;
+
+    border-top:8px solid transparent;
+    border-bottom:8px solid transparent;
+
+    border-left:
+        14px solid var(--purple);
+
+    transform:rotate(18deg);
+}
+
+.zentro-word{
+
+    margin-top:14px;
+
+    font-size:25px;
+
+    font-weight:900;
+
+    letter-spacing:3px;
+
+    color:var(--purple);
+}
+
+.zentro-tagline{
+
+    margin-top:8px;
+
+    color:var(--muted);
+
+    font-weight:600;
+}
+
+
+/* =========================================================
+   TERMS SCREEN
+   ========================================================= */
+
+#termsScreen{
+
+    min-height:100dvh;
+
+    padding:
+        max(24px,env(safe-area-inset-top))
+        20px
+        max(24px,env(safe-area-inset-bottom));
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--blue),
+            white
+        );
+}
+
+.terms-container{
+
+    width:min(100%,600px);
+
+    margin:auto;
+
+    min-height:
+        calc(100dvh - 48px);
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+.terms-logo{
+
+    margin-bottom:25px;
+}
+
+.terms-logo .zentro-z{
+    font-size:58px;
+}
+
+.terms-logo .zentro-smile{
+    width:60px;
+}
+
+.terms-logo .zentro-word{
+    font-size:20px;
+}
+
+.terms-card{
+
+    background:
+        rgba(255,255,255,.92);
+
+    border:
+        1px solid rgba(255,255,255,.7);
+
+    border-radius:28px;
+
+    padding:24px;
+
+    box-shadow:var(--shadow);
+}
+
+.terms-card h1{
+
+    font-size:28px;
+
+    margin-bottom:8px;
+}
+
+.terms-intro{
+
+    color:var(--muted);
+
+    line-height:1.6;
+
+    margin-bottom:20px;
+}
+
+.terms-box{
+
+    max-height:260px;
+
+    overflow-y:auto;
+
+    background:#fafaff;
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:18px;
+
+    margin-bottom:20px;
+}
+
+.terms-box h3{
+
+    margin:
+        15px 0 5px;
+}
+
+.terms-box h3:first-child{
+    margin-top:0;
+}
+
+.terms-box p{
+
+    color:#555563;
+
+    font-size:14px;
+
+    line-height:1.55;
+}
+
+.affiliate-notice{
+
+    margin:18px 0;
+
+    padding:14px;
+
+    border-radius:14px;
+
+    background:var(--purple-light);
+
+    color:var(--purple-dark);
+
+    font-size:13px;
+
+    line-height:1.5;
+}
+
+.terms-actions{
+
+    display:grid;
+
+    gap:10px;
+}
+
+
+/* =========================================================
+   SPLASH
+   ========================================================= */
+
+#splashScreen{
+
+    min-height:100dvh;
+
+    background:var(--blue);
+
+    align-items:center;
+    justify-content:center;
+}
+
+#splashScreen.active{
+    display:flex;
+}
+
+.splash-logo .zentro-z{
+
+    opacity:0;
+
+    animation:
+        zAppear .8s
+        cubic-bezier(.2,.8,.2,1)
+        forwards;
+}
+
+.splash-logo .zentro-smile{
+
+    opacity:0;
+
+    transform:
+        scaleX(0)
+        rotate(-3deg);
+
+    transform-origin:left;
+
+    animation:
+        smileDraw .8s
+        .55s ease
+        forwards;
+}
+
+.splash-logo .zentro-word{
+
+    opacity:0;
+
+    animation:
+        wordAppear .6s
+        1.15s ease
+        forwards;
+}
+
+.splash-logo .zentro-tagline{
+
+    opacity:0;
+
+    animation:
+        wordAppear .6s
+        1.4s ease
+        forwards;
+}
+
+@keyframes zAppear{
+
+    from{
+        opacity:0;
+        transform:
+            scale(.6)
+            rotate(-8deg);
+    }
+
+    to{
+        opacity:1;
+        transform:
+            scale(1)
+            rotate(0);
+    }
+}
+
+@keyframes smileDraw{
+
+    from{
+        opacity:0;
+        transform:
+            scaleX(0)
+            rotate(-3deg);
+    }
+
+    to{
+        opacity:1;
+        transform:
+            scaleX(1)
+            rotate(-3deg);
+    }
+}
+
+@keyframes wordAppear{
+
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
+#homeScreen{
+
+    min-height:100dvh;
+
+    padding:
+        max(30px,env(safe-area-inset-top))
+        22px
+        max(30px,env(safe-area-inset-bottom));
+
+    background:
+        radial-gradient(
+            circle at top,
+            #ffffff,
+            var(--blue)
+        );
+}
+
+.home-content{
+
+    min-height:
+        calc(100dvh - 60px);
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+    justify-content:center;
+
+    width:min(100%,500px);
+
+    margin:auto;
+
+    text-align:center;
+}
+
+.home-logo .zentro-z{
+    font-size:110px;
+}
+
+.home-logo .zentro-smile{
+    width:105px;
+}
+
+.home-logo .zentro-word{
+    font-size:32px;
+}
+
+.home-title{
+
+    margin-top:35px;
+
+    font-size:
+        clamp(28px,8vw,42px);
+
+    line-height:1.1;
+}
+
+.home-description{
+
+    margin:
+        14px 0 28px;
+
+    color:var(--muted);
+
+    line-height:1.6;
+
+    max-width:400px;
+}
+
+.home-start{
+    max-width:360px;
+}
+
+
+/* =========================================================
+   SHOPPING HEADER
+   ========================================================= */
+
+#shopScreen{
+
+    padding-bottom:90px;
+
+    background:var(--background);
+}
+
+.shop-header{
+
+    position:sticky;
+
+    top:0;
+
+    z-index:50;
+
+    padding:
+        max(10px,env(safe-area-inset-top))
+        12px
+        10px;
+
+    background:
+        rgba(255,255,255,.94);
+
+    backdrop-filter:
+        blur(14px);
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+.header-row{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+}
+
+.mini-logo{
+
+    min-width:48px;
+    height:48px;
+
+    border-radius:14px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:var(--blue);
+
+    color:var(--purple);
+
+    font-size:28px;
+
+    font-weight:1000;
+
+    box-shadow:var(--shadow-small);
+}
+
+.search-box{
+
+    flex:1;
+
+    height:48px;
+
+    display:flex;
+
+    align-items:center;
+
+    background:#f3f4f8;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:16px;
+
+    padding:
+        0 14px;
+
+    gap:8px;
+}
+
+.search-box input{
+
+    width:100%;
+
+    border:none;
+
+    outline:none;
+
+    background:transparent;
+
+    color:var(--text);
+}
+
+.cart-header-btn{
+
+    position:relative;
+
+    width:48px;
+    height:48px;
+
+    flex:none;
+
+    border-radius:14px;
+
+    background:white;
+
+    box-shadow:var(--shadow-small);
+
+    font-size:22px;
+}
+
+.cart-count{
+
+    position:absolute;
+
+    right:-4px;
+    top:-4px;
+
+    min-width:20px;
+    height:20px;
+
+    padding:0 5px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:20px;
+
+    background:var(--purple);
+
+    color:white;
+
+    font-size:11px;
+
+    font-weight:900;
+}
+
+
+/* =========================================================
+   SHOP CONTENT
+   ========================================================= */
+
+.shop-content{
+
+    width:min(100%,1100px);
+
+    margin:auto;
+
+    padding:
+        14px 12px 30px;
+}
+
+
+/* =========================================================
+   BIG DEALS
+   ORIGINAL ZENTRO BRANDING
+   ========================================================= */
+
+.big-deals{
+
+    position:relative;
+
+    overflow:hidden;
+
+    min-height:180px;
+
+    padding:24px;
+
+    border-radius:26px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #5522bb,
+            #8a50eb
+        );
+
+    color:white;
+
+    box-shadow:
+        0 14px 35px
+        rgba(85,34,187,.24);
+}
+
+.big-deals::after{
+
+    content:"Z";
+
+    position:absolute;
+
+    right:-15px;
+    bottom:-45px;
+
+    font-size:190px;
+
+    font-weight:1000;
+
+    color:
+        rgba(255,255,255,.08);
+}
+
+.deal-label{
+
+    display:inline-block;
+
+    padding:
+        7px 11px;
+
+    background:
+        rgba(255,255,255,.18);
+
+    border-radius:50px;
+
+    font-size:12px;
+
+    font-weight:800;
+
+    letter-spacing:.5px;
+}
+
+.big-deals h2{
+
+    margin-top:14px;
+
+    font-size:
+        clamp(28px,7vw,42px);
+}
+
+.big-deals p{
+
+    margin-top:8px;
+
+    max-width:400px;
+
+    line-height:1.5;
+
+    color:
+        rgba(255,255,255,.85);
+}
+
+
+/* =========================================================
+   CATEGORY CHIPS
+   ========================================================= */
+
+.categories{
+
+    display:flex;
+
+    gap:9px;
+
+    overflow-x:auto;
+
+    padding:
+        18px 0 10px;
+
+    scrollbar-width:none;
+}
+
+.categories::-webkit-scrollbar{
+    display:none;
+}
+
+.category-btn{
+
+    white-space:nowrap;
+
+    padding:
+        10px 15px;
+
+    border-radius:30px;
+
+    background:white;
+
+    border:
+        1px solid var(--border);
+
+    color:var(--muted);
+
+    font-weight:700;
+}
+
+.category-btn.active{
+
+    background:var(--purple);
+
+    border-color:var(--purple);
+
+    color:white;
+}
+
+
+/* =========================================================
+   SECTION TITLE
+   ========================================================= */
+
+.section-heading{
+
+    display:flex;
+
+    justify-content:space-between;
+    align-items:end;
+
+    margin:
+        14px 2px;
+}
+
+.section-heading h2{
+
+    font-size:22px;
+}
+
+.section-heading span{
+
+    color:var(--muted);
+
+    font-size:13px;
+}
+
+
+/* =========================================================
+   PRODUCT GRID
+   EXACTLY TWO CARDS PER ROW
+   ========================================================= */
+
+.product-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2,minmax(0,1fr));
+
+    gap:12px;
+}
+
+
+/* =========================================================
+   PRODUCT CARD
+   ========================================================= */
+
+.product-card{
+
+    min-width:0;
+
+    overflow:hidden;
+
+    background:white;
+
+    border-radius:20px;
+
+    border:
+        1px solid var(--border);
+
+    box-shadow:
+        0 5px 18px
+        rgba(30,30,50,.06);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+.product-card:active{
+
+    transform:scale(.985);
+}
+
+.product-image-wrap{
+
+    position:relative;
+
+    width:100%;
+
+    aspect-ratio:1/1;
+
+    overflow:hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f7f7fa,
+            #eeeeF5
+        );
+}
+
+.product-image{
+
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+}
+
+.discount-badge{
+
+    position:absolute;
+
+    left:8px;
+    top:8px;
+
+    padding:
+        5px 8px;
+
+    border-radius:8px;
+
+    background:
+        rgba(20,133,79,.92);
+
+    color:white;
+
+    font-size:10px;
+
+    font-weight:900;
+}
+
+.wishlist-btn{
+
+    position:absolute;
+
+    right:8px;
+    top:8px;
+
+    width:32px;
+    height:32px;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    border-radius:50%;
+
+    background:
+        rgba(255,255,255,.94);
+
+    box-shadow:var(--shadow-small);
+
+    font-size:16px;
+}
+
+.product-info{
+
+    padding:
+        11px 11px 13px;
+}
+
+.product-category{
+
+    color:var(--purple);
+
+    font-size:10px;
+
+    font-weight:900;
+
+    text-transform:uppercase;
+
+    letter-spacing:.7px;
+}
+
+.product-name{
+
+    margin-top:5px;
+
+    font-size:14px;
+
+    font-weight:800;
+
+    line-height:1.3;
+
+    display:-webkit-box;
+
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+
+    overflow:hidden;
+}
+
+.product-rating{
+
+    margin-top:7px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    font-size:12px;
+}
+
+.rating-pill{
+
+    padding:
+        3px 6px;
+
+    border-radius:6px;
+
+    background:var(--green);
+
+    color:white;
+
+    font-weight:800;
+}
+
+.rating-count{
+
+    color:var(--muted);
+}
+
+.product-pricing{
+
+    margin-top:8px;
+
+    display:flex;
+
+    align-items:center;
+
+    flex-wrap:wrap;
+
+    gap:5px;
+}
+
+.offer-price{
+
+    font-size:16px;
+
+    font-weight:900;
+}
+
+.original-price{
+
+    color:#8c8c98;
+
+    text-decoration:
+        line-through;
+
+    font-size:12px;
+}
+
+.product-description{
+
+    margin-top:8px;
+
+    color:var(--muted);
+
+    font-size:12px;
+
+    line-height:1.42;
+
+    display:-webkit-box;
+
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+
+    overflow:hidden;
+}
+
+.card-actions{
+
+    margin-top:11px;
+
+    display:grid;
+
+    grid-template-columns:
+        1fr 36px;
+
+    gap:7px;
+}
+
+.view-product-btn{
+
+    min-height:36px;
+
+    border-radius:10px;
+
+    background:var(--purple-light);
+
+    color:var(--purple-dark);
+
+    font-size:11px;
+
+    font-weight:900;
+}
+
+.quick-cart-btn{
+
+    min-height:36px;
+
+    border-radius:10px;
+
+    background:var(--purple);
+
+    color:white;
+
+    font-size:16px;
+}
+
+
+/* =========================================================
+   EMPTY RESULTS
+   ========================================================= */
+
+.empty-results{
+
+    grid-column:1/-1;
+
+    padding:50px 20px;
+
+    text-align:center;
+
+    color:var(--muted);
+}
+
+.empty-results strong{
+
+    display:block;
+
+    color:var(--text);
+
+    font-size:20px;
+
+    margin-bottom:8px;
+}
+
+
+/* =========================================================
+   BOTTOM NAVIGATION
+   ========================================================= */
+
+.bottom-nav{
+
+    position:fixed;
+
+    z-index:60;
+
+    left:50%;
+
+    bottom:
+        max(
+            10px,
+            env(safe-area-inset-bottom)
+        );
+
+    transform:
+        translateX(-50%);
+
+    width:
+        calc(100% - 24px);
+
+    max-width:520px;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    padding:8px;
+
+    border-radius:22px;
+
+    background:
+        rgba(255,255,255,.96);
+
+    backdrop-filter:
+        blur(15px);
+
+    box-shadow:
+        0 8px 35px
+        rgba(20,20,40,.18);
+}
+
+.nav-btn{
+
+    padding:
+        8px 4px;
+
+    border-radius:14px;
+
+    background:transparent;
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    font-weight:800;
+}
+
+.nav-icon{
+
+    display:block;
+
+    margin-bottom:3px;
+
+    font-size:20px;
+}
+
+.nav-btn.active{
+
+    background:var(--purple-light);
+
+    color:var(--purple);
+}
+
+
+/* =========================================================
+   PRODUCT DETAILS SCREEN
+   ========================================================= */
+
+#productScreen{
+
+    background:white;
+
+    padding-bottom:100px;
+}
+
+.details-header{
+
+    position:sticky;
+
+    top:0;
+
+    z-index:40;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:space-between;
+
+    padding:
+        max(12px,env(safe-area-inset-top))
+        14px
+        12px;
+
+    background:
+        rgba(255,255,255,.94);
+
+    backdrop-filter:
+        blur(14px);
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+.details-header-title{
+
+    font-weight:900;
+}
+
+.details-content{
+
+    width:min(100%,850px);
+
+    margin:auto;
+}
+
+.details-image{
+
+    width:100%;
+
+    max-height:500px;
+
+    aspect-ratio:
+        1.1/1;
+
+    object-fit:cover;
+
+    background:#f5f5f8;
+}
+
+.details-body{
+
+    padding:20px;
+}
+
+.details-category{
+
+    color:var(--purple);
+
+    font-size:12px;
+
+    font-weight:900;
+
+    text-transform:uppercase;
+}
+
+.details-title{
+
+    margin-top:8px;
+
+    font-size:
+        clamp(24px,7vw,36px);
+
+    line-height:1.15;
+}
+
+.details-rating{
+
+    margin-top:12px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+}
+
+.details-price{
+
+    margin-top:17px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:9px;
+
+    flex-wrap:wrap;
+}
+
+.details-offer{
+
+    font-size:29px;
+
+    font-weight:1000;
+}
+
+.details-original{
+
+    color:var(--muted);
+
+    text-decoration:
+        line-through;
+}
+
+.details-discount{
+
+    color:var(--green);
+
+    font-weight:900;
+}
+
+.availability{
+
+    display:inline-flex;
+
+    margin-top:15px;
+
+    padding:
+        8px 11px;
+
+    border-radius:10px;
+
+    background:#eaf8f0;
+
+    color:var(--green);
+
+    font-weight:800;
+
+    font-size:13px;
+}
+
+.details-section{
+
+    margin-top:25px;
+
+    padding-top:20px;
+
+    border-top:
+        1px solid var(--border);
+}
+
+.details-section h3{
+
+    margin-bottom:10px;
+
+    font-size:18px;
+}
+
+.details-section p{
+
+    color:var(--muted);
+
+    line-height:1.65;
+}
+
+.feature-list{
+
+    display:grid;
+
+    gap:10px;
+
+    padding-left:18px;
+
+    color:var(--muted);
+
+    line-height:1.5;
+}
+
+.spec-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap:1px;
+
+    overflow:hidden;
+
+    border-radius:14px;
+
+    background:var(--border);
+
+    border:
+        1px solid var(--border);
+}
+
+.spec-item{
+
+    background:white;
+
+    padding:12px;
+}
+
+.spec-label{
+
+    display:block;
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    margin-bottom:4px;
+}
+
+.spec-value{
+
+    font-size:13px;
+
+    font-weight:800;
+}
+
+.amazon-note{
+
+    margin-top:20px;
+
+    padding:14px;
+
+    border-radius:14px;
+
+    background:#fff8e8;
+
+    color:#72500a;
+
+    font-size:12px;
+
+    line-height:1.55;
+}
+
+
+/* =========================================================
+   DETAILS BOTTOM ACTIONS
+   ========================================================= */
+
+.details-actions{
+
+    position:fixed;
+
+    z-index:60;
+
+    left:0;
+    bottom:0;
+
+    width:100%;
+
+    padding:
+        10px 12px
+        max(
+            10px,
+            env(safe-area-inset-bottom)
+        );
+
+    display:grid;
+
+    grid-template-columns:
+        .8fr 1.2fr;
+
+    gap:9px;
+
+    background:
+        rgba(255,255,255,.97);
+
+    border-top:
+        1px solid var(--border);
+
+    backdrop-filter:
+        blur(12px);
+}
+
+.add-cart-large{
+
+    padding:14px;
+
+    border-radius:14px;
+
+    background:var(--purple-light);
+
+    color:var(--purple-dark);
+
+    font-weight:900;
+}
+
+.amazon-btn{
+
+    padding:14px;
+
+    border-radius:14px;
+
+    background:#ffb326;
+
+    color:#171717;
+
+    font-weight:1000;
+}
+
+
+/* =========================================================
+   CART / WISHLIST
+   ========================================================= */
+
+.list-screen{
+
+    min-height:100dvh;
+
+    background:var(--background);
+
+    padding-bottom:30px;
+}
+
+.list-header{
+
+    position:sticky;
+
+    top:0;
+
+    z-index:30;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    padding:
+        max(14px,env(safe-area-inset-top))
+        14px
+        14px;
+
+    background:white;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+.list-header h1{
+
+    font-size:21px;
+}
+
+.list-content{
+
+    width:min(100%,700px);
+
+    margin:auto;
+
+    padding:15px;
+}
+
+.list-item{
+
+    display:grid;
+
+    grid-template-columns:
+        92px 1fr;
+
+    gap:13px;
+
+    margin-bottom:12px;
+
+    padding:11px;
+
+    background:white;
+
+    border-radius:18px;
+
+    border:
+        1px solid var(--border);
+
+    box-shadow:
+        var(--shadow-small);
+}
+
+.list-item img{
+
+    width:92px;
+    height:92px;
+
+    object-fit:cover;
+
+    border-radius:13px;
+}
+
+.list-item h3{
+
+    font-size:14px;
+
+    line-height:1.35;
+}
+
+.list-price{
+
+    margin-top:6px;
+
+    font-weight:900;
+}
+
+.list-actions{
+
+    display:flex;
+
+    gap:7px;
+
+    margin-top:9px;
+}
+
+.small-action{
+
+    padding:
+        7px 9px;
+
+    border-radius:8px;
+
+    background:var(--purple-light);
+
+    color:var(--purple-dark);
+
+    font-size:11px;
+
+    font-weight:800;
+}
+
+.remove-btn{
+
+    background:#fff0ef;
+
+    color:var(--red);
+}
+
+.empty-list{
+
+    padding:
+        70px 20px;
+
+    text-align:center;
+
+    color:var(--muted);
+}
+
+.empty-list-icon{
+
+    font-size:55px;
+
+    margin-bottom:15px;
+}
+
+.empty-list h2{
+
+    color:var(--text);
+
+    margin-bottom:8px;
+}
+
+
+/* =========================================================
+   LOADING OVERLAY
+   ========================================================= */
+
+.loading-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    z-index:200;
+
+    display:none;
+
+    align-items:center;
+    justify-content:center;
+
+    background:
+        rgba(255,255,255,.8);
+
+    backdrop-filter:
+        blur(5px);
+}
+
+.loading-overlay.show{
+    display:flex;
+}
+
+.loader{
+
+    width:48px;
+    height:48px;
+
+    border-radius:50%;
+
+    border:
+        5px solid var(--purple-light);
+
+    border-top-color:
+        var(--purple);
+
+    animation:
+        spin .7s linear infinite;
+}
+
+@keyframes spin{
+
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+.toast{
+
+    position:fixed;
+
+    z-index:300;
+
+    left:50%;
+
+    bottom:100px;
+
+    transform:
+        translate(-50%,20px);
+
+    max-width:
+        calc(100% - 30px);
+
+    padding:
+        12px 18px;
+
+    border-radius:50px;
+
+    background:#19191f;
+
+    color:white;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    opacity:0;
+
+    pointer-events:none;
+
+    transition:
+        .3s ease;
+}
+
+.toast.show{
+
+    opacity:1;
+
+    transform:
+        translate(-50%,0);
+}
+
+
+/* =========================================================
+   DESKTOP ENHANCEMENT
+   STILL KEEPS TWO COLUMNS AS REQUESTED
+   ========================================================= */
+
+@media(min-width:700px){
+
+    .shop-content{
+        padding:
+            20px 20px 40px;
+    }
+
+    .product-grid{
+        gap:18px;
+    }
+
+    .product-card{
+        border-radius:24px;
+    }
+
+    .product-name{
+        font-size:17px;
+    }
+
+    .product-description{
+        font-size:14px;
+    }
+
+    .offer-price{
+        font-size:19px;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media(max-width:360px){
+
+    .shop-content{
+        padding-left:8px;
+        padding-right:8px;
+    }
+
+    .product-grid{
+        gap:8px;
+    }
+
+    .product-info{
+        padding:9px;
+    }
+
+    .product-name{
+        font-size:12px;
+    }
+
+    .product-description{
+        font-size:11px;
+    }
+
+    .offer-price{
+        font-size:14px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+
+<!-- ======================================================
+     SCREEN 1
+     TERMS & CONDITIONS
+     ====================================================== -->
+
+<section
+    id="termsScreen"
+    class="screen active"
+>
+
+    <div class="terms-container">
+
+        <div class="zentro-logo terms-logo">
+
+            <div class="zentro-z">
+                Z
+            </div>
+
+            <div class="zentro-smile">
+            </div>
+
+            <div class="zentro-word">
+                ZENTRO
+            </div>
+
+        </div>
+
+
+        <div class="terms-card">
+
+            <h1>
+                Welcome to Zentro
+            </h1>
+
+            <p class="terms-intro">
+                Please review these terms before
+                continuing to the Zentro shopping
+                experience.
+            </p>
+
+
+            <div class="terms-box">
+
+                <h3>
+                    Zentro service
+                </h3>
+
+                <p>
+                    Zentro is designed as a product
+                    discovery and shopping-assistance
+                    experience.
+                </p>
+
+
+                <h3>
+                    Amazon products
+                </h3>
+
+                <p>
+                    When Amazon affiliate integration
+                    is active, some products may link
+                    to Amazon. The final Amazon
+                    purchase, payment, order and
+                    delivery are handled by Amazon.
+                </p>
+
+
+                <h3>
+                    Product information
+                </h3>
+
+                <p>
+                    Product information may change.
+                    When approved integrations are
+                    connected, Zentro can synchronize
+                    permitted product information from
+                    the relevant service.
+                </p>
+
+
+                <h3>
+                    Original Zentro experience
+                </h3>
+
+                <p>
+                    Zentro has its own interface,
+                    recommendations and product
+                    discovery experience.
+                </p>
+
+
+                <h3>
+                    Privacy and security
+                </h3>
+
+                <p>
+                    Private administration,
+                    credentials and backend services
+                    are not part of the public
+                    customer interface.
+                </p>
+
+            </div>
+
+
+            <div class="affiliate-notice">
+
+                Affiliate disclosure placeholder:
+                when the Amazon Associates
+                integration is activated, the
+                required affiliate disclosure must
+                be displayed according to the
+                applicable program requirements.
+
+            </div>
+
+
+            <div class="terms-actions">
+
+                <button
+                    class="primary-btn"
+                    onclick="acceptTerms()"
+                >
+                    Accept & Continue
+                </button>
+
+                <button
+                    class="secondary-btn"
+                    onclick="declineTerms()"
+                >
+                    Decline
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ======================================================
+     SCREEN 2
+     SPLASH ANIMATION
+     ====================================================== -->
+
+<section
+    id="splashScreen"
+    class="screen"
+>
+
+    <div class="zentro-logo splash-logo">
+
+        <div class="zentro-z">
+            Z
+        </div>
+
+        <div class="zentro-smile">
+        </div>
+
+        <div class="zentro-word">
+            ZENTRO
+        </div>
+
+        <div class="zentro-tagline">
+            Everything. One Place.
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ======================================================
+     SCREEN 3
+     HOMEPAGE
+     ====================================================== -->
+
+<section
+    id="homeScreen"
+    class="screen"
+>
+
+    <div class="home-content">
+
+        <div class="zentro-logo home-logo">
+
+            <div class="zentro-z">
+                Z
+            </div>
+
+            <div class="zentro-smile">
+            </div>
+
+            <div class="zentro-word">
+                ZENTRO
+            </div>
+
+            <div class="zentro-tagline">
+                Everything. One Place.
+            </div>
+
+        </div>
+
+
+        <h1 class="home-title">
+
+            Discover something
+            worth finding.
+
+        </h1>
+
+
+        <p class="home-description">
+
+            Explore useful products,
+            compare details and discover
+            offers in one clean shopping
+            experience.
+
+        </p>
+
+
+        <button
+            class="primary-btn home-start"
+            onclick="openShop()"
+        >
+
+            Start Shopping →
+
+        </button>
+
+    </div>
+
+</section>
+
+
+
+<!-- ======================================================
+     SCREEN 4
+     SHOPPING PAGE
+     ====================================================== -->
+
+<section
+    id="shopScreen"
+    class="screen"
+>
+
+    <header class="shop-header">
+
+        <div class="header-row">
+
+
+            <!-- TOP LEFT ZENTRO LOGO -->
+
+            <button
+                class="mini-logo"
+                onclick="showScreen('homeScreen')"
+                aria-label="Zentro home"
+            >
+                Z
+            </button>
+
+
+            <!-- SEARCH -->
+
+            <div class="search-box">
+
+                <span>
+                    🔎
+                </span>
+
+                <input
+                    id="searchInput"
+                    type="search"
+                    placeholder="Search Zentro products"
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <!-- CART -->
+
+            <button
+                class="cart-header-btn"
+                onclick="openCart()"
+                aria-label="Open cart"
+            >
+
+                🛒
+
+                <span
+                    id="headerCartCount"
+                    class="cart-count"
+                >
+                    0
+                </span>
+
+            </button>
+
+        </div>
+
+    </header>
+
+
+
+    <main class="shop-content">
+
+
+        <!-- ==============================================
+             ZENTRO FESTIVAL / DEALS
+             ============================================== -->
+
+        <section class="big-deals">
+
+            <span class="deal-label">
+                ZENTRO FESTIVAL
+            </span>
+
+            <h2>
+                Zentro Big Deals
+            </h2>
+
+            <p>
+
+                Discover highlighted products,
+                useful picks and exciting offers
+                across Zentro.
+
+            </p>
+
+        </section>
+
+
+
+        <!-- ==============================================
+             CATEGORIES
+             ============================================== -->
+
+        <div
+            id="categoryBar"
+            class="categories"
+        >
+
+            <button
+                class="category-btn active"
+                data-category="All"
+            >
+                All
+            </button>
+
+            <button
+                class="category-btn"
+                data-category="Electronics"
+            >
+                Electronics
+            </button>
+
+            <button
+                class="category-btn"
+                data-category="Fashion"
+            >
+                Fashion
+            </button>
+
+            <button
+                class="category-btn"
+                data-category="Home"
+            >
+                Home
+            </button>
+
+            <button
+                class="category-btn"
+                data-category="Accessories"
+            >
+                Accessories
+            </button>
+
+        </div>
+
+
+
+        <div class="section-heading">
+
+            <h2>
+                Products
+            </h2>
+
+            <span id="productCount">
+                0 products
+            </span>
+
+        </div>
+
+
+
+        <!-- ==============================================
+             EXACT 2 COLUMN PRODUCT GRID
+             ============================================== -->
+
+        <div
+            id="productGrid"
+            class="product-grid"
+        >
+        </div>
+
+    </main>
+
+
+
+    <!-- ==============================================
+         SHOP BOTTOM NAVIGATION
+         ============================================== -->
+
+    <nav class="bottom-nav">
+
+        <button
+            class="nav-btn"
+            onclick="showScreen('homeScreen')"
+        >
+
+            <span class="nav-icon">
+                🏠
+            </span>
+
+            Home
+
+        </button>
+
+
+        <button
+            class="nav-btn active"
+            onclick="openShop()"
+        >
+
+            <span class="nav-icon">
+                🛍️
+            </span>
+
+            Shop
+
+        </button>
+
+
+        <button
+            class="nav-btn"
+            onclick="openWishlist()"
+        >
+
+            <span class="nav-icon">
+                ❤️
+            </span>
+
+            Wishlist
+
+        </button>
+
+
+        <button
+            class="nav-btn"
+            onclick="openCart()"
+        >
+
+            <span class="nav-icon">
+                🛒
+            </span>
+
+            Cart
+
+        </button>
+
+    </nav>
+
+</section>
+
+
+
+<!-- ======================================================
+     SCREEN 5
+     PRODUCT DETAILS
+     ====================================================== -->
+
+<section
+    id="productScreen"
+    class="screen"
+>
+
+    <header class="details-header">
+
+        <button
+            class="icon-btn"
+            onclick="openShop()"
+        >
+            ←
+        </button>
+
+        <div class="details-header-title">
+            Product Details
+        </div>
+
+        <button
+            id="detailsWishlistButton"
+            class="icon-btn"
+            onclick="toggleCurrentWishlist()"
+        >
+            ♡
+        </button>
+
+    </header>
+
+
+    <main
+        id="productDetails"
+        class="details-content"
+    >
+    </main>
+
+
+    <div class="details-actions">
+
+        <button
+            class="add-cart-large"
+            onclick="addCurrentToCart()"
+        >
+
+            🛒 Add to Cart
+
+        </button>
+
+
+        <button
+            class="amazon-btn"
+            onclick="buyCurrentOnAmazon()"
+        >
+
+            Buy on Amazon →
+
+        </button>
+
+    </div>
+
+</section>
+
+
+
+<!-- ======================================================
+     SCREEN 6
+     CART
+     ====================================================== -->
+
+<section
+    id="cartScreen"
+    class="screen list-screen"
+>
+
+    <header class="list-header">
+
+        <button
+            class="icon-btn"
+            onclick="openShop()"
+        >
+            ←
+        </button>
+
+        <h1>
+            Your Cart
+        </h1>
+
+    </header>
+
+
+    <main
+        id="cartList"
+        class="list-content"
+    >
+    </main>
+
+</section>
+
+
+
+<!-- ======================================================
+     SCREEN 7
+     WISHLIST
+     ====================================================== -->
+
+<section
+    id="wishlistScreen"
+    class="screen list-screen"
+>
+
+    <header class="list-header">
+
+        <button
+            class="icon-btn"
+            onclick="openShop()"
+        >
+            ←
+        </button>
+
+        <h1>
+            Wishlist
+        </h1>
+
+    </header>
+
+
+    <main
+        id="wishlistList"
+        class="list-content"
+    >
+    </main>
+
+</section>
+
+
+
+<!-- ======================================================
+     LOADING
+     ====================================================== -->
+
+<div
+    id="loadingOverlay"
+    class="loading-overlay"
+>
+
+    <div class="loader">
+    </div>
+
+</div>
+
+
+
+<!-- ======================================================
+     TOAST MESSAGE
+     ====================================================== -->
+
+<div
+    id="toast"
+    class="toast"
+>
+</div>
+
+
+
+<script>
+
+/* =========================================================
+   ZENTRO CUSTOMER APPLICATION
+   ========================================================= */
+
+
+/*
+    IMPORTANT AMAZON NOTE
+
+    The demo products below are LOCAL DEMO DATA.
+
+    When Zentro receives approved access to the
+    appropriate Amazon affiliate/product-data tools,
+    replace the demo product provider with a secure
+    BACKEND request.
+
+    DO NOT place secret Amazon credentials here.
+*/
+
+
+/* =========================================================
+   DEMO PRODUCT DATA
+   ========================================================= */
+
+const products = [
+
+    {
+        id:1,
+
+        category:"Electronics",
+
+        name:
+            "Wireless Noise-Cancelling Headphones",
+
+        rating:4.6,
+
+        reviews:2841,
+
+        price:4999,
+
+        originalPrice:7999,
+
+        image:
+            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+
+        shortDescription:
+            "Comfortable wireless headphones with immersive sound, soft ear cushions and long listening support.",
+
+        description:
+            "Designed for comfortable everyday listening with a clean wireless experience, immersive audio and a lightweight over-ear design.",
+
+        availability:
+            "Available",
+
+        features:[
+            "Wireless listening",
+            "Comfort-focused ear cushions",
+            "Noise-reduction design",
+            "Portable everyday build"
+        ],
+
+        specs:{
+            "Type":
+                "Over-ear",
+
+            "Connectivity":
+                "Wireless",
+
+            "Use":
+                "Music & calls",
+
+            "Warranty":
+                "See seller details"
+        },
+
+        amazonUrl:""
+    },
+
+
+    {
+        id:2,
+
+        category:"Electronics",
+
+        name:
+            "Smart Fitness Watch",
+
+        rating:4.4,
+
+        reviews:1720,
+
+        price:2499,
+
+        originalPrice:3999,
+
+        image:
+            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
+
+        shortDescription:
+            "A modern smart watch for everyday activity tracking, notifications and quick fitness information.",
+
+        description:
+            "A lightweight smart wearable designed for everyday activity tracking and convenient access to useful information from your wrist.",
+
+        availability:
+            "Available",
+
+        features:[
+            "Activity tracking",
+            "Notification support",
+            "Lightweight design",
+            "Everyday fitness features"
+        ],
+
+        specs:{
+            "Type":
+                "Smart watch",
+
+            "Display":
+                "Digital",
+
+            "Use":
+                "Fitness",
+
+            "Connectivity":
+                "Wireless"
+        },
+
+        amazonUrl:""
+    },
+
+
+    {
+        id:3,
+
+        category:"Fashion",
+
+        name:
+            "Everyday Classic Sneakers",
+
+        rating:4.3,
+
+        reviews:954,
+
+        price:1799,
+
+        originalPrice:2999,
+
+        image:
+            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
+
+        shortDescription:
+            "Versatile everyday sneakers with a clean shape, comfortable fit and casual styling for regular use.",
+
+        description:
+            "A clean casual sneaker concept designed for everyday outfits, comfortable movement and versatile styling.",
+
+        availability:
+            "Available",
+
+        features:[
+            "Casual everyday design",
+            "Comfort-focused fit",
+            "Lightweight construction",
+            "Versatile styling"
+        ],
+
+        specs:{
+            "Type":
+                "Sneakers",
+
+            "Style":
+                "Casual",
+
+            "Use":
+                "Everyday",
+
+            "Fit":
+                "Standard"
+        },
+
+        amazonUrl:""
+    },
+
+
+    {
+        id:4,
+
+        category:"Home",
+
+        name:
+            "Minimal Desk Lamp",
+
+        rating:4.5,
+
+        reviews:641,
+
+        price:1299,
+
+        originalPrice:1999,
+
+        image:
+            "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=800&q=80",
+
+        shortDescription:
+            "A clean desk lamp designed for study spaces, bedside tables and modern home-office setups.",
+
+        description:
+            "A simple modern lighting concept suited to desks, study spaces and bedside use with a clean minimal appearance.",
+
+        availability:
+            "Available",
+
+        features:[
+            "Minimal design",
+            "Desk-friendly size",
+            "Modern appearance",
+            "Useful study lighting"
+        ],
+
+        specs:{
+            "Type":
+                "Desk lamp",
+
+            "Style":
+                "Minimal",
+
+            "Room":
+                "Study / bedroom",
+
+            "Power":
+                "See product details"
+        },
+
+        amazonUrl:""
+    },
+
+
+    {
+        id:5,
+
+        category:"Accessories",
+
+        name:
+            "Premium Everyday Backpack",
+
+        rating:4.7,
+
+        reviews:3218,
+
+        price:2199,
+
+        originalPrice:3499,
+
+        image:
+            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80",
+
+        shortDescription:
+            "Spacious everyday backpack with a clean design for school, travel and carrying daily essentials.",
+
+        description:
+            "A versatile backpack concept with practical storage space and a clean appearance for everyday carrying.",
+
+        availability:
+            "Available",
+
+        features:[
+            "Multiple storage areas",
+            "Everyday carrying design",
+            "Comfort-focused straps",
+            "Travel-friendly layout"
+        ],
+
+        specs:{
+            "Type":
+                "Backpack",
+
+            "Use":
+                "Daily / travel",
+
+            "Style":
+                "Modern",
+
+            "Storage":
+                "Multi-compartment"
+        },
+
+        amazonUrl:""
+    },
+
+
+    {
+        id:6,
+
+        category:"Electronics",
+
+        name:
+            "Portable Bluetooth Speaker",
+
+        rating:4.5,
+
+        reviews:2150,
+
+        price:1599,
+
+        originalPrice:2599,
+
+        image:
+            "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&q=80",
+
+        shortDescription:
+            "Compact wireless speaker built for easy music listening at home, outdoors or while travelling.",
+
+        description:
+            "A portable wireless speaker concept designed for convenient everyday listening and easy carrying.",
+
+        availability:
+            "Available",
+
+        features:[
+            "Portable design",
+            "Wireless playback",
+            "Compact body",
+            "Everyday audio use"
+        ],
+
+        specs:{
+            "Type":
+                "Portable speaker",
+
+            "Connectivity":
+                "Bluetooth",
+
+            "Use":
+                "Music",
+
+            "Form":
+                "Compact"
+        },
+
+        amazonUrl:""
+    },
+
+
+    {
+        id:7,
+
+        category:"Home",
+
+        name:
+            "Modern Insulated Bottle",
+
+        rating:4.6,
+
+        reviews:1865,
+
+        price:799,
+
+        originalPrice:1299,
+
+        image:
+            "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=800&q=80",
+
+        shortDescription:
+            "Reusable everyday bottle with a simple modern appearance for school, travel and daily hydration.",
+
+        description:
+            "A reusable bottle concept created for convenient everyday hydration with a clean, portable design.",
+
+        availability:
+            "Available",
+
+        features:[
+            "Reusable construction",
+            "Portable size",
+            "Everyday design",
+            "Travel friendly"
+        ],
+
+        specs:{
+            "Type":
+                "Bottle",
+
+            "Use":
+                "Hydration",
+
+            "Style":
+                "Modern",
+
+            "Portable":
+                "Yes"
+        },
+
+        amazonUrl:""
+    },
+
+
+    {
+        id:8,
+
+        category:"Accessories",
+
+        name:
+            "Compact Travel Organizer",
+
+        rating:4.2,
+
+        reviews:478,
+
+        price:699,
+
+        originalPrice:999,
+
+        image:
+            "https://images.unsplash.com/photo-1553531889-56d7f53f3955?auto=format&fit=crop&w=800&q=80",
+
+        shortDescription:
+            "A compact organizer for keeping cables, accessories and small travel essentials neatly together.",
+
+        description:
+            "A practical organizer concept intended to keep small accessories and everyday travel items easy to find.",
+
+        availability:
+            "Available",
+
+        features:[
+            "Compact storage",
+            "Travel-friendly format",
+            "Accessory organization",
+            "Lightweight design"
+        ],
+
+        specs:{
+            "Type":
+                "Organizer",
+
+            "Use":
+                "Travel",
+
+            "Storage":
+                "Compact",
+
+            "Portable":
+                "Yes"
+        },
+
+        amazonUrl:""
+    }
+
+];
+
+
+
+/* =========================================================
+   APPLICATION STATE
+   ========================================================= */
+
+let currentProductId = null;
+
+let selectedCategory =
+    "All";
+
+
+let cart =
+    JSON.parse(
+        localStorage.getItem(
+            "zentroCart"
+        ) || "[]"
+    );
+
+
+let wishlist =
+    JSON.parse(
+        localStorage.getItem(
+            "zentroWishlist"
+        ) || "[]"
+    );
+
+
+
+/* =========================================================
+   SCREEN NAVIGATION
+   ========================================================= */
+
+function showScreen(screenId){
+
+    const screens =
+        document.querySelectorAll(
+            ".screen"
+        );
+
+
+    screens.forEach(
+        screen => {
+
+            screen.classList.remove(
+                "active"
+            );
+
+        }
+    );
+
+
+    const target =
+        document.getElementById(
+            screenId
+        );
+
+
+    if(target){
+
+        target.classList.add(
+            "active"
+        );
+
+    }
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"instant"
+    });
+
+}
+
+
+
+function acceptTerms(){
+
+    /*
+       Terms are intentionally shown
+       on a fresh visit.
+
+       If you later want acceptance
+       remembered permanently, we can
+       store a versioned acceptance
+       value in the backend.
+    */
+
+    showScreen(
+        "splashScreen"
+    );
+
+
+    setTimeout(
+        () => {
+
+            showScreen(
+                "homeScreen"
+            );
+
+        },
+        2600
+    );
+
+}
+
+
+
+function declineTerms(){
+
+    showToast(
+        "You need to accept the terms to continue."
+    );
+
+}
+
+
+
+function openShop(){
+
+    showScreen(
+        "shopScreen"
+    );
+
+    renderProducts();
+
+    updateCartCount();
+
+}
+
+
+
+/* =========================================================
+   PRODUCT RENDERING
+   ========================================================= */
+
+function renderProducts(){
+
+    const grid =
+        document.getElementById(
+            "productGrid"
+        );
+
+
+    const search =
+        document
+        .getElementById(
+            "searchInput"
+        )
+        .value
+        .trim()
+        .toLowerCase();
+
+
+    const filtered =
+        products.filter(
+            product => {
+
+                const categoryMatch =
+                    selectedCategory === "All"
+                    ||
+                    product.category ===
+                    selectedCategory;
+
+
+                const searchMatch =
+                    product.name
+                    .toLowerCase()
+                    .includes(search)
+
+                    ||
+
+                    product.shortDescription
+                    .toLowerCase()
+                    .includes(search)
+
+                    ||
+
+                    product.category
+                    .toLowerCase()
+                    .includes(search);
+
+
+                return (
+                    categoryMatch
+                    &&
+                    searchMatch
+                );
+
+            }
+        );
+
+
+    document
+    .getElementById(
+        "productCount"
+    )
+    .textContent =
+        filtered.length
+        +
+        (
+            filtered.length === 1
+            ?
+            " product"
+            :
+            " products"
+        );
+
+
+    if(
+        filtered.length === 0
+    ){
+
+        grid.innerHTML = `
+
+            <div class="empty-results">
+
+                <strong>
+                    No products found
+                </strong>
+
+                Try another search
+                or category.
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    grid.innerHTML =
+        filtered
+        .map(
+            product =>
+                createProductCard(
+                    product
+                )
+        )
+        .join("");
+
+}
+
+
+
+function createProductCard(
+    product
+){
+
+    const discount =
+        calculateDiscount(
+            product.originalPrice,
+            product.price
+        );
+
+
+    const liked =
+        wishlist.includes(
+            product.id
+        );
+
+
+    return `
+
+        <article
+            class="product-card"
+        >
+
+            <div
+                class="product-image-wrap"
+                onclick="openProduct(${product.id})"
+            >
+
+                <img
+                    class="product-image"
+                    src="${product.image}"
+                    alt="${escapeHTML(product.name)}"
+                    loading="lazy"
+                >
+
+
+                <span
+                    class="discount-badge"
+                >
+                    ${discount}% OFF
+                </span>
+
+
+                <button
+                    class="wishlist-btn"
+                    onclick="
+                        event.stopPropagation();
+                        toggleWishlist(${product.id});
+                    "
+                    aria-label="Wishlist"
+                >
+
+                    ${liked ? "♥️" : "♡"}
+
+                </button>
+
+            </div>
+
+
+            <div class="product-info">
+
+                <div
+                    class="product-category"
+                >
+                    ${product.category}
+                </div>
+
+
+                <div
+                    class="product-name"
+                    onclick="openProduct(${product.id})"
+                >
+                    ${escapeHTML(product.name)}
+                </div>
+
+
+                <div
+                    class="product-rating"
+                >
+
+                    <span
+                        class="rating-pill"
+                    >
+                        ${product.rating} ★
+                    </span>
+
+                    <span
+                        class="rating-count"
+                    >
+                        (${formatNumber(product.reviews)})
+                    </span>
+
+                </div>
+
+
+                <div
+                    class="product-pricing"
+                >
+
+                    <span
+                        class="offer-price"
+                    >
+                        ₹${formatNumber(product.price)}
+                    </span>
+
+                    <span
+                        class="original-price"
+                    >
+                        ₹${formatNumber(product.originalPrice)}
+                    </span>
+
+                </div>
+
+
+                <p
+                    class="product-description"
+                >
+                    ${escapeHTML(product.shortDescription)}
+                </p>
+
+
+                <div
+                    class="card-actions"
+                >
+
+                    <button
+                        class="view-product-btn"
+                        onclick="openProduct(${product.id})"
+                    >
+                        View Details
+                    </button>
+
+
+                    <button
+                        class="quick-cart-btn"
+                        onclick="addToCart(${product.id})"
+                        aria-label="Add to cart"
+                    >
+                        +
+                    </button>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    `;
+
+}
+
+
+
+/* =========================================================
+   PRODUCT DETAILS
+   ========================================================= */
+
+function openProduct(
+    productId
+){
+
+    const product =
+        getProduct(
+            productId
+        );
+
+
+    if(!product){
+
+        showToast(
+            "Product could not be loaded."
+        );
+
+        return;
+    }
+
+
+    currentProductId =
+        productId;
+
+
+    const discount =
+        calculateDiscount(
+            product.originalPrice,
+            product.price
+        );
+
+
+    const featureHTML =
+        product.features
+        .map(
+            feature => `
+
+                <li>
+                    ${escapeHTML(feature)}
+                </li>
+
+            `
+        )
+        .join("");
+
+
+    const specHTML =
+        Object.entries(
+            product.specs
+        )
+        .map(
+            ([label,value]) => `
+
+                <div
+                    class="spec-item"
+                >
+
+                    <span
+                        class="spec-label"
+                    >
+                        ${escapeHTML(label)}
+                    </span>
+
+                    <span
+                        class="spec-value"
+                    >
+                        ${escapeHTML(value)}
+                    </span>
+
+                </div>
+
+            `
+        )
+        .join("");
+
+
+    document
+    .getElementById(
+        "productDetails"
+    )
+    .innerHTML = `
+
+        <img
+            class="details-image"
+            src="${product.image}"
+            alt="${escapeHTML(product.name)}"
+        >
+
+
+        <div
+            class="details-body"
+        >
+
+            <div
+                class="details-category"
+            >
+                ${product.category}
+            </div>
+
+
+            <h1
+                class="details-title"
+            >
+                ${escapeHTML(product.name)}
+            </h1>
+
+
+            <div
+                class="details-rating"
+            >
+
+                <span
+                    class="rating-pill"
+                >
+                    ${product.rating} ★
+                </span>
+
+                <span
+                    class="rating-count"
+                >
+                    ${formatNumber(product.reviews)}
+                    ratings
+                </span>
+
+            </div>
+
+
+            <div
+                class="details-price"
+            >
+
+                <span
+                    class="details-offer"
+                >
+                    ₹${formatNumber(product.price)}
+                </span>
+
+                <span
+                    class="details-original"
+                >
+                    ₹${formatNumber(product.originalPrice)}
+                </span>
+
+                <span
+                    class="details-discount"
+                >
+                    ${discount}% OFF
+                </span>
+
+            </div>
+
+
+            <div
+                class="availability"
+            >
+                ✓ ${escapeHTML(product.availability)}
+            </div>
+
+
+            <section
+                class="details-section"
+            >
+
+                <h3>
+                    About this product
+                </h3>
+
+                <p>
+                    ${escapeHTML(product.description)}
+                </p>
+
+            </section>
+
+
+            <section
+                class="details-section"
+            >
+
+                <h3>
+                    Key Features
+                </h3>
+
+                <ul
+                    class="feature-list"
+                >
+                    ${featureHTML}
+                </ul>
+
+            </section>
+
+
+            <section
+                class="details-section"
+            >
+
+                <h3>
+                    Specifications
+                </h3>
+
+                <div
+                    class="spec-grid"
+                >
+                    ${specHTML}
+                </div>
+
+            </section>
+
+
+            <div
+                class="amazon-note"
+            >
+
+                <strong>
+                    Amazon integration:
+                </strong>
+
+                This demo currently uses local
+                product information. When approved
+                Amazon product-data access is
+                connected through Zentro's secure
+                backend, permitted Amazon product
+                information can be synchronized
+                here.
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    updateDetailsWishlistButton();
+
+
+    showScreen(
+        "productScreen"
+    );
+
+}
+
+
+
+/* =========================================================
+   CART
+   ========================================================= */
+
+function addToCart(
+    productId
+){
+
+    if(
+        !cart.includes(
+            productId
+        )
+    ){
+
+        cart.push(
+            productId
+        );
+
+
+        saveCart();
+
+
+        showToast(
+            "Added to your Zentro cart."
+        );
+
+    }
+    else{
+
+        showToast(
+            "This product is already in your cart."
+        );
+
+    }
+
+
+    updateCartCount();
+
+}
+
+
+
+function addCurrentToCart(){
+
+    if(
+        currentProductId !== null
+    ){
+
+        addToCart(
+            currentProductId
+        );
+
+    }
+
+}
+
+
+
+function removeFromCart(
+    productId
+){
+
+    cart =
+        cart.filter(
+            id =>
+                id !== productId
+        );
+
+
+    saveCart();
+
+    renderCart();
+
+    updateCartCount();
+
+}
+
+
+
+function saveCart(){
+
+    localStorage.setItem(
+        "zentroCart",
+        JSON.stringify(
+            cart
+        )
+    );
+
+}
+
+
+
+function updateCartCount(){
+
+    const count =
+        document.getElementById(
+            "headerCartCount"
+        );
+
+
+    if(count){
+
+        count.textContent =
+            cart.length;
+
+    }
+
+}
+
+
+
+function openCart(){
+
+    renderCart();
+
+    showScreen(
+        "cartScreen"
+    );
+
+}
+
+
+
+function renderCart(){
+
+    const container =
+        document.getElementById(
+            "cartList"
+        );
+
+
+    if(
+        cart.length === 0
+    ){
+
+        container.innerHTML = `
+
+            <div
+                class="empty-list"
+            >
+
+                <div
+                    class="empty-list-icon"
+                >
+                    🛒
+                </div>
+
+                <h2>
+                    Your cart is empty
+                </h2>
+
+                <p>
+                    Add products while
+                    exploring Zentro.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    const cartProducts =
+        cart
+        .map(
+            id =>
+                getProduct(id)
+        )
+        .filter(Boolean);
+
+
+    container.innerHTML =
+        cartProducts
+        .map(
+            product =>
+                createListItem(
+                    product,
+                    "cart"
+                )
+        )
+        .join("");
+
+}
+
+
+
+/* =========================================================
+   WISHLIST
+   ========================================================= */
+
+function toggleWishlist(
+    productId
+){
+
+    if(
+        wishlist.includes(
+            productId
+        )
+    ){
+
+        wishlist =
+            wishlist.filter(
+                id =>
+                    id !== productId
+            );
+
+
+        showToast(
+            "Removed from wishlist."
+        );
+
+    }
+    else{
+
+        wishlist.push(
+            productId
+        );
+
+
+        showToast(
+            "Saved to wishlist."
+        );
+
+    }
+
+
+    saveWishlist();
+
+    renderProducts();
+
+    updateDetailsWishlistButton();
+
+}
+
+
+
+function toggleCurrentWishlist(){
+
+    if(
+        currentProductId !== null
+    ){
+
+        toggleWishlist(
+            currentProductId
+        );
+
+    }
+
+}
+
+
+
+function saveWishlist(){
+
+    localStorage.setItem(
+        "zentroWishlist",
+        JSON.stringify(
+            wishlist
+        )
+    );
+
+}
+
+
+
+function openWishlist(){
+
+    renderWishlist();
+
+    showScreen(
+        "wishlistScreen"
+    );
+
+}
+
+
+
+function renderWishlist(){
+
+    const container =
+        document.getElementById(
+            "wishlistList"
+        );
+
+
+    if(
+        wishlist.length === 0
+    ){
+
+        container.innerHTML = `
+
+            <div
+                class="empty-list"
+            >
+
+                <div
+                    class="empty-list-icon"
+                >
+                    ♡
+                </div>
+
+                <h2>
+                    Nothing saved yet
+                </h2>
+
+                <p>
+                    Tap the heart on a
+                    product to save it.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    const savedProducts =
+        wishlist
+        .map(
+            id =>
+                getProduct(id)
+        )
+        .filter(Boolean);
+
+
+    container.innerHTML =
+        savedProducts
+        .map(
+            product =>
+                createListItem(
+                    product,
+                    "wishlist"
+                )
+        )
+        .join("");
+
+}
+
+
+
+function updateDetailsWishlistButton(){
+
+    const button =
+        document.getElementById(
+            "detailsWishlistButton"
+        );
+
+
+    if(
+        !button
+        ||
+        currentProductId === null
+    ){
+
+        return;
+    }
+
+
+    button.textContent =
+        wishlist.includes(
+            currentProductId
+        )
+        ?
+        "♥️"
+        :
+        "♡";
+
+}
+
+
+
+/* =========================================================
+   CART/WISHLIST LIST ITEM
+   ========================================================= */
+
+function createListItem(
+    product,
+    type
+){
+
+    const removeAction =
+        type === "cart"
+        ?
+        `removeFromCart(${product.id})`
+        :
+        `toggleWishlist(${product.id}); renderWishlist();`;
+
+
+    return `
+
+        <article
+            class="list-item"
+        >
+
+            <img
+                src="${product.image}"
+                alt="${escapeHTML(product.name)}"
+            >
+
+
+            <div>
+
+                <h3>
+                    ${escapeHTML(product.name)}
+                </h3>
+
+
+                <div
+                    class="list-price"
+                >
+                    ₹${formatNumber(product.price)}
+                </div>
+
+
+                <div
+                    class="list-actions"
+                >
+
+                    <button
+                        class="small-action"
+                        onclick="openProduct(${product.id})"
+                    >
+                        View
+                    </button>
+
+
+                    ${
+                        type === "wishlist"
+                        ?
+                        `
+
+                        <button
+                            class="small-action"
+                            onclick="addToCart(${product.id})"
+                        >
+                            Add to Cart
+                        </button>
+
+                        `
+                        :
+                        ""
+                    }
+
+
+                    <button
+                        class="small-action remove-btn"
+                        onclick="${removeAction}"
+                    >
+                        Remove
+                    </button>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    `;
+
+}
+
+
+
+/* =========================================================
+   AMAZON AFFILIATE ACTION
+   ========================================================= */
+
+function buyCurrentOnAmazon(){
+
+    const product =
+        getProduct(
+            currentProductId
+        );
+
+
+    if(!product){
+
+        showToast(
+            "Product unavailable."
+        );
+
+        return;
+    }
+
+
+    /*
+       IMPORTANT:
+
+       Do NOT invent an Amazon affiliate URL.
+
+       When your approved Amazon Associates
+       links are available, they can be
+       supplied securely/configured for the
+       appropriate products.
+
+       For now the button correctly refuses
+       to send customers through a fake link.
+    */
+
+
+    if(
+        !product.amazonUrl
+    ){
+
+        showToast(
+            "Amazon affiliate link will activate after the approved link is connected."
+        );
+
+        return;
+    }
+
+
+    window.open(
+        product.amazonUrl,
+        "_blank",
+        "noopener,noreferrer"
+    );
+
+}
+
+
+
+/* =========================================================
+   CATEGORY FILTER
+   ========================================================= */
+
+document
+.getElementById(
+    "categoryBar"
+)
+.addEventListener(
+    "click",
+    event => {
+
+        const button =
+            event.target.closest(
+                ".category-btn"
+            );
+
+
+        if(!button){
+            return;
+        }
+
+
+        selectedCategory =
+            button.dataset.category;
+
+
+        document
+        .querySelectorAll(
+            ".category-btn"
+        )
+        .forEach(
+            categoryButton => {
+
+                categoryButton
+                .classList
+                .toggle(
+                    "active",
+                    categoryButton === button
+                );
+
+            }
+        );
+
+
+        renderProducts();
+
+    }
+);
+
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+document
+.getElementById(
+    "searchInput"
+)
+.addEventListener(
+    "input",
+    renderProducts
+);
+
+
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+
+function getProduct(
+    id
+){
+
+    return products.find(
+        product =>
+            product.id === id
+    );
+
+}
+
+
+
+function calculateDiscount(
+    original,
+    current
+){
+
+    if(
+        !original
+        ||
+        original <= current
+    ){
+
+        return 0;
+    }
+
+
+    return Math.round(
+        (
+            (
+                original
+                -
+                current
+            )
+            /
+            original
+        )
+        *
+        100
+    );
+
+}
+
+
+
+function formatNumber(
+    number
+){
+
+    return Number(
+        number
+    )
+    .toLocaleString(
+        "en-IN"
+    );
+
+}
+
+
+
+/*
+   Prevent product text from accidentally
+   being interpreted as HTML if later
+   loaded from a backend.
+*/
+
+function escapeHTML(
+    value
+){
+
+    return String(
+        value
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
+}
+
+
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+let toastTimer;
+
+
+function showToast(
+    message
+){
+
+    const toast =
+        document.getElementById(
+            "toast"
+        );
+
+
+    toast.textContent =
+        message;
+
+
+    toast.classList.add(
+        "show"
+    );
+
+
+    clearTimeout(
+        toastTimer
+    );
+
+
+    toastTimer =
+        setTimeout(
+            () => {
+
+                toast
+                .classList
+                .remove(
+                    "show"
+                );
+
+            },
+            2600
+        );
+
+}
+
+
+
+/* =========================================================
+   IMAGE ERROR FALLBACK
+   ========================================================= */
+
+document.addEventListener(
+    "error",
+    event => {
+
+        if(
+            event.target
+            &&
+            event.target.tagName
+            ===
+            "IMG"
+        ){
+
+            event.target.style.display =
+                "none";
+
+
+            const parent =
+                event.target.parentElement;
+
+
+            if(parent){
+
+                parent.style.background =
+                    "linear-gradient(135deg,#eee6ff,#dff4ff)";
+
+            }
+
+        }
+
+    },
+    true
+);
+
+
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+updateCartCount();
+
+renderProducts();
+
+</script>
+
+</body>
+  </html>
