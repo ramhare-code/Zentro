@@ -18,8 +18,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
-      // development seed images
-      { protocol: "https", hostname: "images.unsplash.com" },
+      // approved external image hosts (same list the admin accepts for image links)
+      ...(process.env.MEDIA_REMOTE_HOSTS ?? "images.unsplash.com").split(",").map((h) => h.trim()).filter(Boolean)
+        .map((hostname) => ({ protocol: "https" as const, hostname })),
       // production media: Supabase Storage public bucket
       ...(supabaseHost ? [{ protocol: "https" as const, hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }] : []),
     ],

@@ -73,7 +73,7 @@ export async function quote(
   }[]>`
     select v.id as "variantId", p.id as "productId", p.name as "productName", v.options, v.sku,
            v.price_paise as "pricePaise", v.mrp_paise as "mrpPaise", v.stock,
-           (v.is_active and p.is_active) as available, p.gst_rate::text as "gstRate", p.hsn_code as "hsnCode",
+           (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available, p.gst_rate::text as "gstRate", p.hsn_code as "hsnCode",
            coalesce((select url from shop.product_media m where m.id = v.media_id),
                     (select url from shop.product_media m where m.product_id = p.id and m.kind = 'image' order by sort_order limit 1)) as "imageUrl"
     from shop.product_variants v join shop.products p on p.id = v.product_id

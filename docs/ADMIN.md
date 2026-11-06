@@ -40,6 +40,16 @@ npm run dev:admin   # http://localhost:3001
 Until an email provider is connected, invitation links are shown once to the inviting
 Owner to pass on privately (e.g. in person or an encrypted chat).
 
+## Media storage
+
+`MEDIA_STORAGE=supabase` stores uploads in a public Supabase Storage bucket (`MEDIA_BUCKET`, default
+`product-media`) using the server-only `SUPABASE_SERVICE_ROLE_KEY`; create the bucket as public first.
+Leave it blank to store images in the database (`shop.media_files`, served by the storefront at
+`/media/<id>`) — fine for development and small catalogues. Uploads are checked by their actual bytes
+(JPEG/PNG/WebP/AVIF only, ≤ 5 MB, 200–8000 px); SVG and other types are refused. Image links are
+accepted only from hosts in `MEDIA_REMOTE_HOSTS` (also used by the storefront's image optimiser), so
+the server never fetches arbitrary URLs.
+
 ## Deploying
 
 * Create a **second Vercel project** with root directory `apps/admin`, on its own
@@ -68,8 +78,8 @@ npx next build && npm run test:e2e   # fresh DB → owner bootstrap → MFA logi
 | Customers — directory, profile with orders/tickets/consent, restrict/restore, sign-out, data export, erasure (#51–56, 59–60) | **Done** |
 | Support tickets — queue, priority, assignment, replies, internal notes (#88) | **Done** |
 | Review moderation (#89) · Returns & refunds with Razorpay, Refunds page (#48, 65–66) | **Done** |
-| Catalogue management (#11–30) | Next |
-| Inventory, suppliers, purchase orders (#31–40) | Planned |
+| Catalogue — products (draft/schedule/publish/archive), variants, logged stock changes, images (validated uploads) & video links, specs, SEO, bulk actions, CSV import with preview; categories (tree, ordering, scheduled visibility, SEO, cycle/in-use checks); brands with logos (#11–30) | **Done** |
+| Inventory dashboard, suppliers, purchase orders, receiving, reconciliation (#31–40) | Next (stock movements log already in place) |
 | Payments dashboard, reconciliation, finance reports, invoices, tax rules (#61–64, 67–70) | Planned |
 | Coupons, promotions, banners, content (#71–80) | Planned |
 | Hardening & deployment (#96–100) | Planned |

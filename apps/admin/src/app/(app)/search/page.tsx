@@ -54,7 +54,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         <section className="card p-5"><h2 className="font-semibold">Products</h2>
           <ul className="mt-3 divide-y divide-line">{products.map((p) => (
             <li key={p.id} className="flex justify-between gap-2 py-2.5 text-sm">
-              <Link href={`/products?q=${encodeURIComponent(p.name)}`} className="font-semibold text-brand-700 hover:underline">{p.name}</Link>
+              <Link href={`/products/${p.id}`} className="font-semibold text-brand-700 hover:underline">{p.name}</Link>
               {p.sku && <span className="text-ink-muted">SKU {p.sku}</span>}
             </li>))}</ul>
         </section>

@@ -34,6 +34,9 @@ export interface Category {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  noindex: boolean;
 }
 
 export interface Banner {
@@ -81,6 +84,8 @@ export interface ProductDetail {
   ratingAvg: number;
   ratingCount: number;
   ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number>;
+  seoTitle: string | null;
+  seoDescription: string | null;
   media: Media[];
   variants: Variant[];
   optionNames: string[];
@@ -124,9 +129,10 @@ const SUMMARY_COLUMNS = `
 
 export const getCategories = cache(async (): Promise<Category[]> => {
   return db()<Category[]>`
-    select id, parent_id as "parentId", slug, name, description, image_url as "imageUrl"
+    select id, parent_id as "parentId", slug, name, description, image_url as "imageUrl",
+           seo_title as "seoTitle", seo_description as "seoDescription", noindex
     from shop.categories
-    where is_active
+    where shop.category_live(is_active, publish_at)
     order by sort_order, name`;
 });
 
@@ -194,9 +200,9 @@ export async function listProducts(f: ListingFilters): Promise<ListingResult> {
   const scope = sql`
     ${f.category ? sql`and pl.category_id in (
         with recursive tree as (
-          select id from shop.categories where slug = ${f.category} and is_active
+          select id from shop.categories where slug = ${f.category} and shop.category_live(is_active, publish_at)
           union all
-          select c.id from shop.categories c join tree on c.parent_id = tree.id where c.is_active
+          select c.id from shop.categories c join tree on c.parent_id = tree.id where shop.category_live(c.is_active, c.publish_at)
         ) select id from tree)` : sql``}
     ${f.q ? sql`and (
         (${tsq}::text is not null and (
@@ -307,7 +313,7 @@ export async function autocomplete(q: string): Promise<Suggestion> {
       limit 6`,
     sql<Suggestion["categories"]>`
       select slug, name from shop.categories
-      where is_active and (lower(name) like ${"%" + qLower + "%"} or extensions.word_similarity(${qLower}, lower(name)) >= 0.5)
+      where shop.category_live(is_active, publish_at) and (lower(name) like ${"%" + qLower + "%"} or extensions.word_similarity(${qLower}, lower(name)) >= 0.5)
       order by sort_order limit 4`,
   ]);
   const result: Suggestion = { products, categories };
@@ -329,15 +335,17 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
       id: string; slug: string; name: string; shortDescription: string | null; description: string | null;
       highlights: string[]; specifications: ProductDetail["specifications"]; categoryId: string;
       brandSlug: string | null; brandName: string | null; ratingAvg: number; ratingCount: number; updatedAt: Date;
+      seoTitle: string | null; seoDescription: string | null;
     }[]
   >`
     select p.id, p.slug, p.name, p.short_description as "shortDescription", p.description,
            p.highlights, p.specifications, p.category_id as "categoryId",
            b.slug as "brandSlug", b.name as "brandName",
-           p.rating_avg::float8 as "ratingAvg", p.rating_count as "ratingCount", p.updated_at as "updatedAt"
+           p.rating_avg::float8 as "ratingAvg", p.rating_count as "ratingCount", p.updated_at as "updatedAt",
+           p.seo_title as "seoTitle", p.seo_description as "seoDescription"
     from shop.products p
     left join shop.brands b on b.id = p.brand_id
-    where p.slug = ${slug} and p.is_active`;
+    where p.slug = ${slug} and shop.product_live(p.is_active, p.publish_at, p.archived_at)`;
   if (!p) return null;
 
   const [media, variants, breakdownRows, categories] = await Promise.all([
@@ -383,6 +391,8 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
     ratingAvg: p.ratingAvg,
     ratingCount: p.ratingCount,
     ratingBreakdown,
+    seoTitle: p.seoTitle,
+    seoDescription: p.seoDescription,
     media,
     variants,
     optionNames,
@@ -443,9 +453,9 @@ export async function getSitemapEntries() {
   const sql = db();
   const [products, categories] = await Promise.all([
     sql<{ slug: string; updatedAt: Date }[]>`
-      select slug, updated_at as "updatedAt" from shop.products where is_active order by updated_at desc limit 45000`,
+      select slug, updated_at as "updatedAt" from shop.products where shop.product_live(is_active, publish_at, archived_at) order by updated_at desc limit 45000`,
     sql<{ slug: string; updatedAt: Date }[]>`
-      select slug, updated_at as "updatedAt" from shop.categories where is_active`,
+      select slug, updated_at as "updatedAt" from shop.categories where shop.category_live(is_active, publish_at) and not noindex`,
   ]);
   return { products, categories };
 }

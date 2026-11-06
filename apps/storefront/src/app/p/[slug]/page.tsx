@@ -26,8 +26,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!product) return { title: "Product not found" };
   const image = product.media.find((m) => m.kind === "image");
   return {
-    title: product.name,
-    description: product.shortDescription ?? undefined,
+    title: product.seoTitle ?? product.name,
+    description: product.seoDescription ?? product.shortDescription ?? undefined,
     alternates: { canonical: `/p/${product.slug}` },
     openGraph: { type: "website", title: product.name, description: product.shortDescription ?? undefined, images: image ? [{ url: image.url, alt: image.alt }] : undefined },
   };

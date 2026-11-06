@@ -66,7 +66,7 @@ export async function getCartLines(cartId: string | null): Promise<CartLine[]> {
            nullif(array_to_string(array(select value from jsonb_each_text(v.options)), ' / '), '') as "variantLabel",
            v.sku, coalesce((select url from shop.product_media m where m.id = v.media_id),
                            (select url from shop.product_media m where m.product_id = p.id and m.kind = 'image' order by sort_order limit 1)) as "imageUrl",
-           v.price_paise as "pricePaise", v.mrp_paise as "mrpPaise", v.stock, (v.is_active and p.is_active) as available
+           v.price_paise as "pricePaise", v.mrp_paise as "mrpPaise", v.stock, (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available
     from shop.cart_items i
     join shop.product_variants v on v.id = i.variant_id
     join shop.products p on p.id = v.product_id
@@ -79,7 +79,7 @@ export async function linesForVariant(variantId: string, quantity: number): Prom
     select v.id as "variantId", ${quantity}::int as quantity, p.name as "productName", p.slug as "productSlug",
            nullif(array_to_string(array(select value from jsonb_each_text(v.options)), ' / '), '') as "variantLabel",
            v.sku, (select url from shop.product_media m where m.product_id = p.id and m.kind = 'image' order by sort_order limit 1) as "imageUrl",
-           v.price_paise as "pricePaise", v.mrp_paise as "mrpPaise", v.stock, (v.is_active and p.is_active) as available
+           v.price_paise as "pricePaise", v.mrp_paise as "mrpPaise", v.stock, (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available
     from shop.product_variants v join shop.products p on p.id = v.product_id where v.id = ${variantId}`;
   return rows;
 }

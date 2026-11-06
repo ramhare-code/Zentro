@@ -21,7 +21,7 @@ export async function toggleWishlistAction(productId: string): Promise<WishResul
   if (del.count) { revalidatePath("/wishlist"); return { ok: true, saved: false }; }
   const [{ n }] = (await sql<{ n: number }[]>`select count(*)::int as n from shop.wishlist_items where user_id = ${c.id}`) as unknown as [{ n: number }];
   if (n >= 200) return { ok: false, error: "Your wishlist is full (200 items)." };
-  await sql`insert into shop.wishlist_items (user_id, product_id) select ${c.id}, id from shop.products where id = ${id} and is_active on conflict do nothing`;
+  await sql`insert into shop.wishlist_items (user_id, product_id) select ${c.id}, id from shop.products where id = ${id} and shop.product_live(is_active, publish_at, archived_at) on conflict do nothing`;
   revalidatePath("/wishlist");
   return { ok: true, saved: true };
 }

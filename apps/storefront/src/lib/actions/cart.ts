@@ -14,7 +14,7 @@ export async function addToCartAction(variantId: string, quantity = 1): Promise<
   if (!parsed.success) return { ok: false, error: "Invalid item." };
   const sql = db();
   const [v] = await sql<{ stock: number; available: boolean }[]>`
-    select v.stock, (v.is_active and p.is_active) as available from shop.product_variants v join shop.products p on p.id = v.product_id where v.id = ${variantId}`;
+    select v.stock, (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available from shop.product_variants v join shop.products p on p.id = v.product_id where v.id = ${variantId}`;
   if (!v?.available) return { ok: false, error: "This item is no longer available." };
   const cartId = (await getCartId(true))!;
   const [existing] = await sql<{ quantity: number }[]>`select quantity from shop.cart_items where cart_id = ${cartId} and variant_id = ${variantId}`;

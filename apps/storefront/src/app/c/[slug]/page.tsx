@@ -17,11 +17,11 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const f = parseListingParams(await searchParams, { category: slug });
   const filtered = f.brands.length || f.minPrice !== undefined || f.maxPrice !== undefined || f.minRating || f.inStock || f.sort !== "popularity";
   return {
-    title: found.category.name,
-    description: found.category.description ?? `Shop ${found.category.name} online.`,
+    title: found.category.seoTitle ?? found.category.name,
+    description: found.category.seoDescription ?? found.category.description ?? `Shop ${found.category.name} online.`,
     // filtered/sorted variants point search engines at the clean page (page number kept)
     alternates: { canonical: `/c/${slug}${f.page > 1 ? `?page=${f.page}` : ""}` },
-    robots: filtered ? { index: false, follow: true } : undefined,
+    robots: filtered || found.category.noindex ? { index: false, follow: true } : undefined,
   };
 }
 
