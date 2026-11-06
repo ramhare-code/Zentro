@@ -3,16 +3,21 @@ import { db } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import { processOutbox, startDueCampaigns } from "@zentro/commerce/messaging";
 import { providerEnv } from "@/lib/messaging-env";
+import { reconcilePendingPayments } from "@zentro/commerce/payments";
+import { razorpayConfigFromEnv } from "@zentro/commerce/razorpay";
 
 /** Runs every few minutes (vercel.json). Vercel sends `Authorization: Bearer $CRON_SECRET`. */
 export async function GET(req: NextRequest) {
   const secret = serverEnv().CRON_SECRET;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) return new NextResponse(null, { status: 401 });
   const sql = db();
+  // check with Razorpay before releasing holds, so a payment whose callback was missed isn't cancelled
+  const cfg = razorpayConfigFromEnv();
+  const payments = cfg ? await reconcilePendingPayments(sql, cfg) : null;
   const [r] = await sql<{ released: number }[]>`select shop.release_expired_reservations() as released`;
   await sql`delete from shop.rate_limits where window_start < now() - interval '1 day'`;
   await sql`delete from shop.analytics_events where occurred_at < now() - interval '13 months'`;
   const campaignsStarted = await startDueCampaigns(sql);
   const messages = await processOutbox(sql, providerEnv(), { limit: 200 });
-  return NextResponse.json({ releasedOrders: r?.released ?? 0, campaignsStarted, messages });
+  return NextResponse.json({ payments, releasedOrders: r?.released ?? 0, campaignsStarted, messages });
 }

@@ -8,6 +8,7 @@
     "./db": "./src/db.ts",
     "./orders": "./src/orders.ts",
     "./razorpay": "./src/razorpay.ts",
+    "./payments": "./src/payments.ts",
     "./messaging": "./src/messaging.ts",
     "./support": "./src/support.ts"
   },

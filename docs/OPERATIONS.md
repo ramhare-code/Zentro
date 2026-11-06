@@ -45,6 +45,13 @@ Phase 4–5 add audited SQL functions (e.g. `shop.mark_shipped(order_number, car
 fulfilment updates always write an `order_events` row and queue the customer notification.
 Use those functions rather than editing order rows directly.
 
+## Payments and settlements
+
+- **Webhook:** in the Razorpay dashboard → Webhooks, add `https://<storefront>/api/webhooks/razorpay` with the secret in `RAZORPAY_WEBHOOK_SECRET`, events `payment.captured`, `payment.failed`, `order.paid`, `refund.processed`, `refund.failed`. Every event appears in Admin → Payments → Gateway events; failed ones can be retried there.
+- **Missed confirmations:** the 5-minute cron asks Razorpay about any attempt that is 10 minutes – 7 days old and still unconfirmed, before releasing reserved stock. Staff can run the same check from a payment or the Reconciliation page. The admin site needs `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` for this.
+- **Duplicate charges:** if a customer pays twice for one order, the second payment is refunded automatically and noted on the order.
+- **Settlements:** weekly, download the Settlement recon report (CSV) from Razorpay → Reports and upload it on Reconciliation. Choose whether amounts are in rupees or paise. *Check* compares only; *Record* stores fees and settlement ids for lines that match amount and status exactly. Mismatches and unknown ids are listed for you to investigate in Razorpay — nothing is changed for them. Column names in Razorpay reports can change; the importer accepts the common ones (`entity_id`/`payment_id`/`id`, `amount`/`credit`/`debit`, `fee`, `tax`, `settlement_id`, `settled_at`). Check the first import's totals against the report.
+
 ## Before launch — business checklist
 
 * Real catalogue, prices, HSN codes and GST rates confirmed with your accountant.

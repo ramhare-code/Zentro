@@ -34,6 +34,7 @@ export const PERMISSION_GROUPS = [
   ] },
   { group: "Finance", items: [
     ["payments.read", "View payments"],
+    ["payments.reconcile", "Check payments with the gateway, retry webhooks, import settlements"],
     ["refunds.create", "Issue refunds"],
     ["finance.read", "View financial reports"],
     ["finance.export", "Export financial data"],

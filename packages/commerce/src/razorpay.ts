@@ -54,12 +54,13 @@ async function call<T>(cfg: RazorpayConfig, method: "GET" | "POST", path: string
 }
 
 export interface RzpOrder { id: string; amount: number; currency: string; receipt: string; status: string }
-export interface RzpPayment { id: string; order_id: string; amount: number; currency: string; status: "created" | "authorized" | "captured" | "refunded" | "failed"; method?: string; error_code?: string | null; error_description?: string | null }
+export interface RzpPayment { id: string; order_id: string; amount: number; currency: string; status: "created" | "authorized" | "captured" | "refunded" | "failed"; method?: string; error_code?: string | null; error_description?: string | null; fee?: number | null; tax?: number | null; created_at?: number }
 export interface RzpRefund { id: string; payment_id: string; amount: number; status: "pending" | "processed" | "failed" }
 
 export const razorpay = {
   createOrder: (cfg: RazorpayConfig, amountPaise: number, receipt: string, notes: Record<string, string>) =>
     call<RzpOrder>(cfg, "POST", "/v1/orders", { amount: amountPaise, currency: "INR", receipt, notes, payment_capture: 1 }),
+  fetchOrderPayments: (cfg: RazorpayConfig, orderId: string) => call<{ items: RzpPayment[] }>(cfg, "GET", `/v1/orders/${encodeURIComponent(orderId)}/payments`),
   fetchPayment: (cfg: RazorpayConfig, paymentId: string) => call<RzpPayment>(cfg, "GET", `/v1/payments/${encodeURIComponent(paymentId)}`),
   capture: (cfg: RazorpayConfig, paymentId: string, amountPaise: number) =>
     call<RzpPayment>(cfg, "POST", `/v1/payments/${encodeURIComponent(paymentId)}/capture`, { amount: amountPaise, currency: "INR" }),

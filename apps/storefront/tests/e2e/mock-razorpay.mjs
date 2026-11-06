@@ -31,6 +31,9 @@ http.createServer((req, res) => {
       return send(res, 200, o);
     }
     let m;
+    if (req.method === "GET" && (m = url.pathname.match(/^\/v1\/orders\/([\w]+)\/payments$/))) {
+      return send(res, 200, { entity: "collection", items: [...payments.values()].filter((p) => p.order_id === m[1]) });
+    }
     if (req.method === "GET" && (m = url.pathname.match(/^\/v1\/payments\/([\w]+)$/))) {
       const p = payments.get(m[1]);
       return p ? send(res, 200, p) : send(res, 404, { error: { description: "not found" } });
@@ -45,7 +48,9 @@ http.createServer((req, res) => {
     if (req.method === "POST" && url.pathname === "/__pay") {
       const o = orders.get(body.order_id);
       if (!o) return send(res, 404, {});
-      const p = { id: `pay_mock${++seq}`, order_id: o.id, amount: body.amount ?? o.amount, currency: "INR", status: body.status ?? "captured", method: "upi" };
+      const p = { id: `pay_mock${++seq}`, order_id: o.id, amount: body.amount ?? o.amount, currency: "INR", status: body.status ?? "captured", method: body.method ?? "upi",
+        fee: Math.round((body.amount ?? o.amount) * 0.0236), tax: Math.round((body.amount ?? o.amount) * 0.0036),
+        error_code: body.status === "failed" ? "BAD_REQUEST_ERROR" : null, error_description: body.status === "failed" ? "Payment declined by bank" : null };
       payments.set(p.id, p);
       const signature = body.forge ? "0".repeat(64) : createHmac("sha256", SECRET).update(`${o.id}|${p.id}`).digest("hex");
       return send(res, 200, { razorpay_order_id: o.id, razorpay_payment_id: p.id, razorpay_signature: signature });
