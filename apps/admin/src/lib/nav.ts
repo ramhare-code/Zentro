@@ -21,9 +21,9 @@ export const NAV: { section: string; items: NavItem[] }[] = [
     { href: "/brands", label: "Brands", permission: "catalog.manage", phase: 1, icon: "tag" },
   ] },
   { section: "Inventory", items: [
-    { href: "/inventory", label: "Inventory", permission: "inventory.read", phase: 3, icon: "layers" },
-    { href: "/suppliers", label: "Suppliers", permission: "suppliers.manage", phase: 3, icon: "truck" },
-    { href: "/purchase-orders", label: "Purchase orders", permission: "purchase_orders.manage", phase: 3, icon: "clipboard" },
+    { href: "/inventory", label: "Inventory", permission: "inventory.read", phase: 1, icon: "layers" },
+    { href: "/suppliers", label: "Suppliers", permission: "suppliers.manage", phase: 1, icon: "truck" },
+    { href: "/purchase-orders", label: "Purchase orders", permission: "purchase_orders.manage", phase: 1, icon: "clipboard" },
   ] },
   { section: "Sales", items: [
     { href: "/orders", label: "Orders", permission: "orders.read", phase: 1, icon: "cart" },

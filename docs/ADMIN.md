@@ -79,7 +79,7 @@ npx next build && npm run test:e2e   # fresh DB → owner bootstrap → MFA logi
 | Support tickets — queue, priority, assignment, replies, internal notes (#88) | **Done** |
 | Review moderation (#89) · Returns & refunds with Razorpay, Refunds page (#48, 65–66) | **Done** |
 | Catalogue — products (draft/schedule/publish/archive), variants, logged stock changes, images (validated uploads) & video links, specs, SEO, bulk actions, CSV import with preview; categories (tree, ordering, scheduled visibility, SEO, cycle/in-use checks); brands with logos (#11–30) | **Done** |
-| Inventory dashboard, suppliers, purchase orders, receiving, reconciliation (#31–40) | Next (stock movements log already in place) |
+| Inventory dashboard, suppliers, purchase orders, receiving, reconciliation (#31–40) | **Done.** `/inventory` (on hand, reserved for unpaid checkouts, value at cost and at price, low/out filters, CSV export), `/inventory/movements`, `/inventory/counts` (snapshot → count → apply only the difference, so sales during the count aren't lost), `/suppliers`, `/purchase-orders` (draft → ordered → partly/fully received → closed/cancelled; receiving refuses over-receipt, adds stock, records unit cost and logs a movement referencing the PO). Overdue POs raise an alert. |
 | Payments dashboard, reconciliation, finance reports, invoices, tax rules (#61–64, 67–70) | Planned |
 | Coupons, promotions, banners, content (#71–80) | Planned |
 | Hardening & deployment (#96–100) | Planned |
