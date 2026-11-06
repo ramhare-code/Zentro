@@ -6,6 +6,7 @@ import { ProductRail } from "@/components/catalog/ProductRail";
 import { RatingBadge } from "@/components/catalog/RatingBadge";
 import { JsonLd } from "@/components/JsonLd";
 import { TrackProductView } from "@/components/analytics/Analytics";
+import { WishlistButton } from "@/components/engage/WishlistButton";
 import { ProductInteractive } from "@/components/product/ProductInteractive";
 import { ReviewsSection } from "@/components/product/ReviewsSection";
 import { getProductBySlug, getPublishedReviews, getRelatedProducts } from "@/lib/catalog";
@@ -99,6 +100,7 @@ export default async function ProductPage({ params }: Props) {
               <h1 className="mt-1 font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl">{product.name}</h1>
               <RatingBadge avg={product.ratingAvg} count={product.ratingCount} className="mt-2" />
               {product.shortDescription && <p className="mt-3 text-ink-muted">{product.shortDescription}</p>}
+              <div className="mt-4"><WishlistButton productId={product.id} slug={product.slug} /></div>
             </>
           }
         />

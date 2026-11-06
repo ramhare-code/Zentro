@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { formatPaise, ORDER_STATUS_LABELS, stateName, type OrderStatus } from "@zentro/commerce";
 import { findOrderForGuest } from "@zentro/commerce/orders";
 import { OrderActions } from "@/components/order/OrderActions";
+import { ReviewForm } from "@/components/engage/ReviewForm";
 import { db } from "@/lib/db";
 import { getOrderView } from "@/lib/order-view";
 
@@ -92,6 +93,8 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
                   {i.productSlug ? <Link href={`/p/${i.productSlug}`} className="font-semibold hover:text-brand-700">{i.productName}</Link> : <span className="font-semibold">{i.productName}</span>}
                   {i.variantLabel && <span className="block text-ink-muted">{i.variantLabel}</span>}
                   <span className="block text-ink-muted">Qty {i.quantity} × {formatPaise(i.unitPricePaise)}</span>
+                  {o.status === "delivered" && i.productSlug && (
+                    <ReviewForm reviewed={i.reviewed} orderNumber={o.orderNumber} token={t} orderItemId={i.id} productName={i.productName} defaultName={`${o.address.fullName.split(" ")[0]} ${(o.address.fullName.split(" ")[1] ?? "").slice(0, 1)}`.trim()} />)}
                 </span>
                 <span className="text-sm font-semibold">{formatPaise(i.lineTotalPaise)}</span>
               </li>

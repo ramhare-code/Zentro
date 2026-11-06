@@ -8,7 +8,7 @@ export interface OrderView {
   address: { fullName: string; phone: string; line1: string; line2?: string; landmark?: string; city: string; stateCode: string; pincode: string };
   placeOfSupply: string; placedAt: Date | null; createdAt: Date; estFrom: string | null; estTo: string | null; cancelReason: string | null;
   reservationOpen: boolean;
-  items: { id: string; productName: string; variantLabel: string | null; sku: string; imageUrl: string | null; hsnCode: string | null; quantity: number; unitPricePaise: number; lineTotalPaise: number; discountPaise: number; gstRate: string; taxablePaise: number; cgstPaise: number; sgstPaise: number; igstPaise: number; productSlug: string | null }[];
+  items: { id: string; productName: string; variantLabel: string | null; sku: string; imageUrl: string | null; hsnCode: string | null; quantity: number; unitPricePaise: number; lineTotalPaise: number; discountPaise: number; gstRate: string; taxablePaise: number; cgstPaise: number; sgstPaise: number; igstPaise: number; productSlug: string | null; reviewed: boolean }[];
   events: { status: string; note: string | null; createdAt: Date }[];
   shipments: { carrier: string; trackingNumber: string | null; trackingUrl: string | null; status: string; shippedAt: Date | null; deliveredAt: Date | null; events: { status: string; location: string | null; description: string | null; occurredAt: Date }[] }[];
   refunds: { amountPaise: number; status: string; createdAt: Date; processedAt: Date | null }[];
@@ -33,7 +33,7 @@ export async function getOrderView(orderId: string): Promise<OrderView | null> {
       select i.id, i.product_name as "productName", i.variant_label as "variantLabel", i.sku, i.image_url as "imageUrl", i.hsn_code as "hsnCode",
              i.quantity, i.unit_price_paise as "unitPricePaise", i.line_total_paise as "lineTotalPaise", i.discount_paise as "discountPaise",
              i.gst_rate::text as "gstRate", i.taxable_paise as "taxablePaise", i.cgst_paise as "cgstPaise", i.sgst_paise as "sgstPaise", i.igst_paise as "igstPaise",
-             p.slug as "productSlug"
+             p.slug as "productSlug", exists (select 1 from shop.reviews r where r.order_item_id = i.id) as reviewed
       from shop.order_items i left join shop.products p on p.id = i.product_id where i.order_id = ${orderId} order by i.product_name`,
     sql<OrderView["events"]>`select status, note, created_at as "createdAt" from shop.order_events where order_id = ${orderId} and actor <> 'operations' or (order_id = ${orderId} and actor = 'operations' and note is null) order by created_at`,
     sql<OrderView["shipments"]>`
