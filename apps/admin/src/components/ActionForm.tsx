@@ -8,11 +8,13 @@ import clsx from "clsx";
 
 type Result = { ok?: boolean; error?: string; needsReauth?: boolean; message?: string; secret?: string } | undefined;
 
-export function SubmitButton({ children, variant = "primary", className, confirm }: { children: React.ReactNode; variant?: "primary" | "secondary" | "danger"; className?: string; confirm?: string }) {
+export function SubmitButton({ children, variant = "primary", className, confirm, name, value }: { children: React.ReactNode; variant?: "primary" | "secondary" | "danger"; className?: string; confirm?: string; name?: string; value?: string }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
+      name={name}
+      value={value}
       disabled={pending}
       onClick={(e) => { if (confirm && !window.confirm(confirm)) e.preventDefault(); }}
       className={clsx("btn", `btn-${variant}`, className)}

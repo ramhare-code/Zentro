@@ -59,3 +59,15 @@ export async function login(page: Page, email: string, secret: string, avoidStep
   await expect(page).toHaveURL(/\/dashboard/);
   return step;
 }
+
+/** Test-only: creates an invited staff account with the given built-in role and returns its invite link. */
+export async function createStaffInvite(email: string, name: string, roleKey: string): Promise<string> {
+  const { createHash, randomBytes } = await import("node:crypto");
+  const token = randomBytes(32).toString("base64url");
+  const sql = db();
+  const [u] = await sql<{ id: string }[]>`
+    insert into shop.staff_users (email, full_name, role_id) values (${email}, ${name}, (select id from shop.admin_roles where key = ${roleKey})) returning id`;
+  await sql`insert into shop.staff_invites (staff_id, token_hash, expires_at) values (${u!.id}, ${createHash("sha256").update(token).digest("hex")}, now() + interval '1 hour')`;
+  await sql.end();
+  return `http://localhost:3201/invite/${token}`;
+}

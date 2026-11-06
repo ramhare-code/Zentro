@@ -5,6 +5,7 @@ export const E2E_DB = process.env.E2E_DATABASE_URL ?? "postgres://zentro:zentro@
 
 export default defineConfig({
   testDir: "tests/e2e",
+  testMatch: ["orders.spec.ts", "admin.spec.ts"],
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,
   workers: 1,

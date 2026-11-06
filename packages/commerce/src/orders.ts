@@ -406,3 +406,48 @@ export async function rotateGuestToken(sql: Sql, orderId: string): Promise<strin
   await sql`update shop.orders set guest_access_hash = ${sha256(token)} where id = ${orderId}`;
   return token;
 }
+
+// ---------------------------------------------------------------------
+// Fulfilment (operations)
+// ---------------------------------------------------------------------
+
+const NOTIFY_ON: Partial<Record<OrderStatus, string>> = {
+  shipped: "order_shipped",
+  out_for_delivery: "order_out_for_delivery",
+  delivered: "order_delivered",
+};
+
+/**
+ * Moves an order forward along the allowed lifecycle. Shipping requires a
+ * carrier; customers are notified on shipped / out for delivery / delivered.
+ */
+export async function advanceOrder(
+  sql: Sql,
+  orderId: string,
+  to: OrderStatus,
+  opts: { actor: "operations" | "carrier" | "system"; note?: string; shipment?: { carrier: string; trackingNumber?: string; trackingUrl?: string } },
+): Promise<void> {
+  await sql.begin(async (tx) => {
+    const [o] = await tx<{ status: OrderStatus; paymentStatus: string }[]>`
+      select status, payment_status as "paymentStatus" from shop.orders where id = ${orderId} for update`;
+    if (!o) throw new CheckoutError("Order not found.");
+    if (to === "cancelled") throw new CheckoutError("Use cancel to cancel an order.");
+    if (!canTransition(o.status, to)) throw new CheckoutError(`An order that is ${o.status.replace(/_/g, " ")} can’t move to ${to.replace(/_/g, " ")}.`);
+    if (o.paymentStatus !== "paid" && ["processing", "packed", "shipped"].includes(to)) throw new CheckoutError("Only paid orders can be fulfilled.");
+
+    if (to === "shipped") {
+      const s = opts.shipment;
+      if (!s?.carrier?.trim()) throw new CheckoutError("Enter the carrier to mark the order shipped.");
+      if (s.trackingUrl && !/^https:\/\//.test(s.trackingUrl)) throw new CheckoutError("Tracking link must start with https://");
+      await tx`insert into shop.shipments (order_id, carrier, tracking_number, tracking_url, status, shipped_at)
+               values (${orderId}, ${s.carrier.trim().slice(0, 80)}, ${s.trackingNumber?.trim().slice(0, 60) || null}, ${s.trackingUrl?.trim().slice(0, 300) || null}, 'in_transit', now())`;
+    }
+    if (to === "out_for_delivery") await tx`update shop.shipments set status = 'out_for_delivery' where order_id = ${orderId} and delivered_at is null`;
+    if (to === "delivered") await tx`update shop.shipments set status = 'delivered', delivered_at = now() where order_id = ${orderId} and delivered_at is null`;
+
+    await tx`update shop.orders set status = ${to}, delivered_at = case when ${to} = 'delivered' then now() else delivered_at end where id = ${orderId}`;
+    await tx`insert into shop.order_events (order_id, status, note, actor) values (${orderId}, ${to}, ${opts.note?.slice(0, 300) ?? null}, ${opts.actor})`;
+    const template = NOTIFY_ON[to];
+    if (template) await enqueueOrderNotification(tx, orderId, template);
+  });
+}
