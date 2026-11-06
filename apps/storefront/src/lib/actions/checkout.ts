@@ -12,6 +12,7 @@ import { getCartId, getCartLines, linesForVariant, syncCartCount } from "../cart
 import { db } from "../db";
 import { serverEnv } from "../env";
 import { SITE_NAME } from "../site";
+import { getCustomer } from "../customer";
 
 const phone = z.string().transform((v) => v.replace(/\D/g, "").slice(-10)).pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number."));
 const text = (min: number, max: number, msg: string) => z.string().trim().min(min, msg).max(max, msg);
@@ -77,9 +78,10 @@ async function recordConsent(email: string, mobile: string, c: CheckoutInput["co
   if (c.sms) grants.push(["sms", mobile, "Send me offers and new arrivals by SMS."]);
   if (c.whatsapp) grants.push(["whatsapp", mobile, "Send me offers and new arrivals on WhatsApp."]);
   if (c.email) grants.push(["email", email, "Send me offers and new arrivals by email."]);
+  const userId = (await getCustomer())?.id ?? null;
   for (const [channel, recipient, wording] of grants) {
-    await db()`insert into shop.marketing_consents (channel, recipient, status, source, wording, evidence)
-               values (${channel}, ${recipient}, 'granted', 'checkout', ${wording}, ${evidence})`;
+    await db()`insert into shop.marketing_consents (channel, recipient, user_id, status, source, wording, evidence)
+               values (${channel}, ${recipient}, ${userId}, 'granted', 'checkout', ${wording}, ${evidence})`;
   }
 }
 
@@ -101,7 +103,7 @@ export async function placeOrderAction(raw: CheckoutInput): Promise<PlaceResult>
   try {
     const placed = await placeOrder(sql, {
       lines: await linesFor(input.buy), email: input.email, phone: input.address.phone, address: input.address,
-      couponCode: input.couponCode, idempotencyKey: input.idempotencyKey, userId: null,
+      couponCode: input.couponCode, idempotencyKey: input.idempotencyKey, userId: (await getCustomer())?.id ?? null,
       whatsappUpdates: input.consent.whatsappUpdates, sellerStateCode: sellerState(),
     });
     if (!placed.existing) await recordConsent(input.email, input.address.phone, input.consent);

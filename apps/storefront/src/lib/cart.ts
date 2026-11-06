@@ -3,8 +3,9 @@ import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "./db";
 
-export const CART_COOKIE = "zentro_cart";
-export const CART_COUNT_COOKIE = "zentro_cart_n"; // readable by the header badge; not sensitive
+import { CART_COOKIE, CART_COUNT_COOKIE } from "./cart-cookie";
+import { getCustomer } from "./customer";
+export { CART_COOKIE, CART_COUNT_COOKIE };
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex");
 
 export interface CartLine {
@@ -33,6 +34,17 @@ async function cartToken(create: boolean): Promise<string | null> {
 }
 
 export async function getCartId(create = false): Promise<string | null> {
+  const customer = await getCustomer();
+  if (customer) {
+    const sql = db();
+    if (create) {
+      const [c] = await sql<{ id: string }[]>`
+        insert into shop.carts (user_id) values (${customer.id}) on conflict (user_id) do update set updated_at = now() returning id`;
+      return c!.id;
+    }
+    const [c] = await sql<{ id: string }[]>`select id from shop.carts where user_id = ${customer.id}`;
+    return c?.id ?? null;
+  }
   const token = await cartToken(create);
   if (!token) return null;
   const sql = db();

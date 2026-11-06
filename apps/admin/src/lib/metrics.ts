@@ -56,8 +56,8 @@ export async function getDashboard(range: DateRange) {
       coalesce((select sum(amount_paise) from shop.refunds where status = 'processed' and processed_at >= ${start} and processed_at < ${end}), 0)::bigint::float8 as refunds,
       (select count(*) from shop.products where is_active)::int as "activeProducts",
       (select count(*) from shop.product_variants v join shop.products p on p.id = v.product_id where p.is_active and v.is_active and v.stock = 0)::int as "outOfStock",
-      (select count(*) from auth.users)::int as customers,
-      (select count(*) from auth.users where created_at >= ${start} and created_at < ${end})::int as "newCustomers",
+      (select count(*) from shop.customers where status <> 'deleted')::int as customers,
+      (select count(*) from shop.customers where status <> 'deleted' and created_at >= ${start} and created_at < ${end})::int as "newCustomers",
       (select count(distinct buyer) from paid where placed_at >= ${start} and placed_at < ${end})::int as buyers,
       (select count(distinct p.buyer) from paid p where p.placed_at >= ${start} and p.placed_at < ${end}
          and exists (select 1 from paid e where e.buyer = p.buyer and e.placed_at < ${start}))::int as "returningBuyers",

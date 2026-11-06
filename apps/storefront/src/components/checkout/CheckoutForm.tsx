@@ -11,8 +11,11 @@ import { useRazorpayPay } from "./PayButton";
 type Buy = { variantId: string; quantity: number } | undefined;
 const field = "mt-1.5 h-11 w-full rounded-xl border border-line-strong bg-white px-3.5 text-[0.95rem] focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";
 
-export function CheckoutForm({ buy, initialQuote }: { buy: Buy; initialQuote: null }) {
-  const [form, setForm] = useState({ email: "", fullName: "", phone: "", line1: "", line2: "", landmark: "", city: "", stateCode: "", pincode: "" });
+export interface CheckoutPrefill { email: string; fullName: string; phone: string; line1: string; line2: string; landmark: string; city: string; stateCode: string; pincode: string }
+const EMPTY: CheckoutPrefill = { email: "", fullName: "", phone: "", line1: "", line2: "", landmark: "", city: "", stateCode: "", pincode: "" };
+
+export function CheckoutForm({ buy, initialQuote, prefill, signedIn }: { buy: Buy; initialQuote: null; prefill?: Partial<CheckoutPrefill>; signedIn?: boolean }) {
+  const [form, setForm] = useState<CheckoutPrefill>({ ...EMPTY, ...prefill });
   const [coupon, setCoupon] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | undefined>();
   const [consent, setConsent] = useState({ sms: false, whatsapp: false, email: false, whatsappUpdates: false });
@@ -73,7 +76,7 @@ export function CheckoutForm({ buy, initialQuote }: { buy: Buy; initialQuote: nu
         <section className="rounded-card bg-white p-5 ring-1 ring-line sm:p-6" aria-labelledby="contact-h">
           <h2 id="contact-h" className="font-display text-lg font-bold">Contact</h2>
           <label className="mt-4 block text-sm font-medium">Email<input type="email" required autoComplete="email" value={form.email} onChange={set("email")} className={field} />{err("email")}</label>
-          <p className="mt-1 text-xs text-ink-muted">We’ll send your order confirmation and invoice here.</p>
+          <p className="mt-1 text-xs text-ink-muted">We’ll send your order confirmation and invoice here.{!signedIn && <> Have an account? <Link href="/account/login?next=/checkout" className="font-semibold text-brand-700 underline">Sign in</Link> for faster checkout — or continue as a guest.</>}</p>
         </section>
 
         <section className="rounded-card bg-white p-5 ring-1 ring-line sm:p-6" aria-labelledby="addr-h">

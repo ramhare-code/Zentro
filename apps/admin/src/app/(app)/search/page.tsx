@@ -29,8 +29,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       : Promise.resolve([]),
     s.permissions.has("customers.read")
       ? sql<{ id: string; email: string | null; name: string | null }[]>`
-          select u.id, u.email, pr.full_name as name from auth.users u left join shop.profiles pr on pr.user_id = u.id
-          where lower(u.email) like ${like} or lower(pr.full_name) like ${like} limit 10`
+          select id, email, full_name as name from shop.customers
+          where status <> 'deleted' and (email like ${like} or lower(full_name) like ${like} or phone like ${like}) limit 10`
       : Promise.resolve([]),
   ]);
 

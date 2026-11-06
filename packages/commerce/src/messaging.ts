@@ -16,6 +16,7 @@ export type MessageKind = "transactional" | "service" | "promotional";
 export const TEMPLATE_VARIABLES = [
   "name", "store", "order_number", "total", "order_link", "carrier", "tracking_number", "tracking_link",
   "refund_amount", "coupon_code", "shop_link", "unsubscribe_link",
+  "action_link", "code", "ticket_number", "message", "status",
 ] as const;
 export type TemplateVar = (typeof TEMPLATE_VARIABLES)[number];
 
@@ -269,6 +270,9 @@ async function variablesFor(sql: Sql, row: OutboxRow, env: ProviderEnv): Promise
   }
   if (typeof row.payload.name === "string") vars.name = row.payload.name;
   if (typeof row.payload.couponCode === "string") vars.coupon_code = row.payload.couponCode;
+  for (const [k, v] of [["actionLink", "action_link"], ["code", "code"], ["ticketNumber", "ticket_number"], ["message", "message"], ["status", "status"]] as const) {
+    if (typeof row.payload[k] === "string") vars[v] = row.payload[k] as string;
+  }
   if (row.kind === "promotional" && env.UNSUBSCRIBE_SECRET) vars.unsubscribe_link = unsubscribeLink(site, env.UNSUBSCRIBE_SECRET, row.channel, row.recipient);
   if (!vars.name) vars.name = "there";
   return vars;
