@@ -403,23 +403,6 @@ img{
     line-height:1.55;
 }
 
-.affiliate-notice{
-
-    margin:18px 0;
-
-    padding:14px;
-
-    border-radius:14px;
-
-    background:var(--purple-light);
-
-    color:var(--purple-dark);
-
-    font-size:13px;
-
-    line-height:1.5;
-}
-
 .terms-actions{
 
     display:grid;
@@ -1570,23 +1553,6 @@ img{
     font-weight:800;
 }
 
-.amazon-note{
-
-    margin-top:20px;
-
-    padding:14px;
-
-    border-radius:14px;
-
-    background:#fff8e8;
-
-    color:#72500a;
-
-    font-size:12px;
-
-    line-height:1.55;
-}
-
 
 /* =========================================================
    DETAILS BOTTOM ACTIONS
@@ -1613,7 +1579,7 @@ img{
     display:grid;
 
     grid-template-columns:
-        .8fr 1.2fr;
+        1fr;
 
     gap:9px;
 
@@ -1638,19 +1604,6 @@ img{
     color:var(--purple-dark);
 
     font-weight:900;
-}
-
-.amazon-btn{
-
-    padding:14px;
-
-    border-radius:14px;
-
-    background:#ffb326;
-
-    color:#171717;
-
-    font-weight:1000;
 }
 
 
@@ -2039,20 +1992,6 @@ img{
                     experience.
                 </p>
 
-
-                <h3>
-                    Amazon products
-                </h3>
-
-                <p>
-                    When Amazon affiliate integration
-                    is active, some products may link
-                    to Amazon. The final Amazon
-                    purchase, payment, order and
-                    delivery are handled by Amazon.
-                </p>
-
-
                 <h3>
                     Product information
                 </h3>
@@ -2089,19 +2028,6 @@ img{
                 </p>
 
             </div>
-
-
-            <div class="affiliate-notice">
-
-                Affiliate disclosure placeholder:
-                when the Amazon Associates
-                integration is activated, the
-                required affiliate disclosure must
-                be displayed according to the
-                applicable program requirements.
-
-            </div>
-
 
             <div class="terms-actions">
 
@@ -2519,17 +2445,6 @@ img{
             🛒 Add to Cart
 
         </button>
-
-
-        <button
-            class="amazon-btn"
-            onclick="buyCurrentOnAmazon()"
-        >
-
-            Buy on Amazon →
-
-        </button>
-
     </div>
 
 </section>
@@ -2643,20 +2558,6 @@ img{
    ========================================================= */
 
 
-/*
-    IMPORTANT AMAZON NOTE
-
-    The demo products below are LOCAL DEMO DATA.
-
-    When Zentro receives approved access to the
-    appropriate Amazon affiliate/product-data tools,
-    replace the demo product provider with a secure
-    BACKEND request.
-
-    DO NOT place secret Amazon credentials here.
-*/
-
-
 /* =========================================================
    DEMO PRODUCT DATA
    ========================================================= */
@@ -2710,9 +2611,7 @@ const products = [
 
             "Warranty":
                 "See seller details"
-        },
-
-        amazonUrl:""
+        }
     },
 
 
@@ -2763,9 +2662,7 @@ const products = [
 
             "Connectivity":
                 "Wireless"
-        },
-
-        amazonUrl:""
+        }
     },
 
 
@@ -2816,9 +2713,7 @@ const products = [
 
             "Fit":
                 "Standard"
-        },
-
-        amazonUrl:""
+        }
     },
 
 
@@ -2869,9 +2764,7 @@ const products = [
 
             "Power":
                 "See product details"
-        },
-
-        amazonUrl:""
+        }
     },
 
 
@@ -2922,9 +2815,7 @@ const products = [
 
             "Storage":
                 "Multi-compartment"
-        },
-
-        amazonUrl:""
+        }
     },
 
 
@@ -2975,9 +2866,7 @@ const products = [
 
             "Form":
                 "Compact"
-        },
-
-        amazonUrl:""
+        }
     },
 
 
@@ -3028,9 +2917,7 @@ const products = [
 
             "Portable":
                 "Yes"
-        },
-
-        amazonUrl:""
+        }
     },
 
 
@@ -3081,9 +2968,7 @@ const products = [
 
             "Portable":
                 "Yes"
-        },
-
-        amazonUrl:""
+        }
     }
 
 ];
@@ -3696,26 +3581,6 @@ function openProduct(
                 </div>
 
             </section>
-
-
-            <div
-                class="amazon-note"
-            >
-
-                <strong>
-                    Amazon integration:
-                </strong>
-
-                This demo currently uses local
-                product information. When approved
-                Amazon product-data access is
-                connected through Zentro's secure
-                backend, permitted Amazon product
-                information can be synchronized
-                here.
-
-            </div>
-
         </div>
 
     `;
@@ -4194,65 +4059,6 @@ function createListItem(
         </article>
 
     `;
-
-}
-
-
-
-/* =========================================================
-   AMAZON AFFILIATE ACTION
-   ========================================================= */
-
-function buyCurrentOnAmazon(){
-
-    const product =
-        getProduct(
-            currentProductId
-        );
-
-
-    if(!product){
-
-        showToast(
-            "Product unavailable."
-        );
-
-        return;
-    }
-
-
-    /*
-       IMPORTANT:
-
-       Do NOT invent an Amazon affiliate URL.
-
-       When your approved Amazon Associates
-       links are available, they can be
-       supplied securely/configured for the
-       appropriate products.
-
-       For now the button correctly refuses
-       to send customers through a fake link.
-    */
-
-
-    if(
-        !product.amazonUrl
-    ){
-
-        showToast(
-            "Amazon affiliate link will activate after the approved link is connected."
-        );
-
-        return;
-    }
-
-
-    window.open(
-        product.amazonUrl,
-        "_blank",
-        "noopener,noreferrer"
-    );
 
 }
 
