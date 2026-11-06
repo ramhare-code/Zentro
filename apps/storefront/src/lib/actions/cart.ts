@@ -7,7 +7,7 @@ import { db } from "../db";
 
 export type CartResult = { ok: boolean; count?: number; error?: string };
 
-const input = z.object({ variantId: z.string().uuid(), quantity: z.number().int().min(1).max(10) });
+const input = z.object({ variantId: z.guid(), quantity: z.number().int().min(1).max(10) });
 
 export async function addToCartAction(variantId: string, quantity = 1): Promise<CartResult> {
   const parsed = input.safeParse({ variantId, quantity });
@@ -28,7 +28,7 @@ export async function addToCartAction(variantId: string, quantity = 1): Promise<
 }
 
 export async function setCartQuantityAction(variantId: string, quantity: number): Promise<CartResult> {
-  const parsed = z.object({ variantId: z.string().uuid(), quantity: z.number().int().min(0).max(10) }).safeParse({ variantId, quantity });
+  const parsed = z.object({ variantId: z.guid(), quantity: z.number().int().min(0).max(10) }).safeParse({ variantId, quantity });
   if (!parsed.success) return { ok: false, error: "Invalid quantity." };
   const cartId = await getCartId(false);
   if (!cartId) return { ok: false, error: "Your cart is empty." };

@@ -8,9 +8,9 @@ const schema = z.object({
   event: z.enum(["page_view", "product_view", "search", "add_to_cart", "begin_checkout", "purchase"]),
   path: z.string().max(300).startsWith("/"),
   referrer: z.string().max(1000).optional(),
-  visitorId: z.string().uuid().optional(),
-  sessionId: z.string().uuid().optional(),
-  productId: z.string().uuid().optional(),
+  visitorId: z.guid().optional(),
+  sessionId: z.guid().optional(),
+  productId: z.guid().optional(),
   query: z.string().max(100).optional(),
   valuePaise: z.number().int().min(0).max(100_000_000).optional(),
 });

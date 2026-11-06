@@ -31,8 +31,8 @@ const checkoutSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address.").max(200),
   address: addressSchema,
   couponCode: z.string().trim().toUpperCase().max(20).optional().transform((v) => v || undefined),
-  idempotencyKey: z.string().uuid(),
-  buy: z.object({ variantId: z.string().uuid(), quantity: z.number().int().min(1).max(10) }).optional(),
+  idempotencyKey: z.guid(),
+  buy: z.object({ variantId: z.guid(), quantity: z.number().int().min(1).max(10) }).optional(),
   consent: z.object({ sms: z.boolean(), whatsapp: z.boolean(), email: z.boolean(), whatsappUpdates: z.boolean() }),
 });
 export type CheckoutInput = z.input<typeof checkoutSchema>;

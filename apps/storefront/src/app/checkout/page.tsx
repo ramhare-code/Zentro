@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ buy?: string; qty?: string }> }) {
   const sp = await searchParams;
-  const buyId = z.string().uuid().safeParse(sp.buy).data;
+  const buyId = z.guid().safeParse(sp.buy).data;
   const qty = z.coerce.number().int().min(1).max(10).safeParse(sp.qty).data ?? 1;
   const lines = buyId ? await linesForVariant(buyId, qty) : await getCartLines(await getCartId(false));
   if (!lines.some((l) => l.available && l.stock > 0)) redirect(buyId ? "/" : "/cart");

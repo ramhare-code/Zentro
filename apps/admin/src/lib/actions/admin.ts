@@ -11,7 +11,7 @@ import { OWNER_ONLY, isPermission } from "../permissions";
 import { authorize } from "../session";
 import { guarded, UserError, type ActionResult } from "./result";
 
-const uuid = z.string().uuid();
+const uuid = z.guid();
 
 // ----------------------------------------------------------------- staff
 

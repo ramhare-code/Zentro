@@ -1,17 +1,33 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = Number(process.env.PORT ?? 3100);
+export const E2E_DB = process.env.E2E_DATABASE_URL ?? "postgres://zentro:zentro@localhost/zentro_store_e2e";
+export const CRON_SECRET = "e2e-cron-secret-0123456789";
+export const WEBHOOK_SECRET = "whsec_mock";
 
 export default defineConfig({
   testDir: "tests/e2e",
-  fullyParallel: true,
-  retries: process.env.CI ? 2 : 0,
+  globalSetup: "./tests/e2e/global-setup.ts",
+  fullyParallel: false,
+  workers: 1,
+  retries: process.env.CI ? 1 : 0,
   use: { baseURL: `http://localhost:${port}` },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testIgnore: /checkout\.spec/ },
   ],
-  webServer: process.env.E2E_NO_SERVER
-    ? undefined
-    : { command: `npm run start -- -p ${port}`, port, reuseExistingServer: true, timeout: 120_000 },
+  webServer: [
+    { command: "node tests/e2e/mock-razorpay.mjs", port: 3999, reuseExistingServer: false },
+    {
+      command: `npx next start -p ${port}`,
+      port,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: {
+        DATABASE_URL: E2E_DB, APP_ENV: "development", NEXT_PUBLIC_SITE_URL: `http://localhost:${port}`, SELLER_STATE_CODE: "KA",
+        RAZORPAY_KEY_ID: "rzp_test_mock", RAZORPAY_KEY_SECRET: "mock_secret", RAZORPAY_WEBHOOK_SECRET: WEBHOOK_SECRET,
+        RAZORPAY_API_BASE: "http://localhost:3999", CRON_SECRET,
+      },
+    },
+  ],
 });

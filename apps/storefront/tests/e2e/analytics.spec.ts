@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import postgres from "postgres";
 
-const DB = process.env.DATABASE_URL ?? "postgres://zentro:zentro@localhost/zentro_dev";
+import { E2E_DB as DB } from "../../playwright.config";
 
 async function events(since: Date) {
   const sql = postgres(DB, { max: 1, onnotice: () => {} });
