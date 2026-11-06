@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   Zentro design tokens
+   Brand: deep violet with warm accent; neutral, airy surfaces.
+   All text/background pairs below meet WCAG 2.2 AA (≥ 4.5:1).
+   --------------------------------------------------------------- */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f5f0ff;
+  --color-brand-100: #ebe1ff;
+  --color-brand-200: #d6c4ff;
+  --color-brand-300: #b899ff;
+  --color-brand-400: #9566f5;
+  --color-brand-500: #7a42e6;
+  --color-brand-600: #6d35d4; /* primary — 6.6:1 on white */
+  --color-brand-700: #5527ad;
+  --color-brand-800: #43208a;
+  --color-brand-900: #2c1460;
+
+  --color-accent-400: #ffb547;
+  --color-accent-500: #f59e0b;
+  --color-accent-700: #9a5b00; /* accent text on white — 5.2:1 */
+
+  --color-ink: #16151c;        /* body text — 17:1 */
+  --color-ink-muted: #5b5a66;  /* secondary text — 6.9:1 */
+  --color-ink-subtle: #75747f; /* tertiary text — 4.6:1 */
+  --color-surface: #ffffff;
+  --color-canvas: #f6f6fa;
+  --color-line: #e6e5ee;
+  --color-line-strong: #cfcdda;
+
+  --color-success-50: #ecfdf3;
+  --color-success-700: #0f7a43; /* 5.4:1 */
+  --color-warning-50: #fff7e6;
+  --color-warning-700: #9a5b00;
+  --color-danger-50: #fef1f0;
+  --color-danger-700: #b42318; /* 6.3:1 */
+
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(22 21 28 / 0.04), 0 8px 24px rgb(22 21 28 / 0.06);
+  --shadow-pop: 0 12px 40px rgb(22 21 28 / 0.16);
+
+  --animate-fade-up: fade-up 0.4s ease both;
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 8rem;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection { background: var(--color-brand-200); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (width >= 40rem) { padding-inline: 1.5rem; }
+  @media (width >= 64rem) { padding-inline: 2rem; }
+}
