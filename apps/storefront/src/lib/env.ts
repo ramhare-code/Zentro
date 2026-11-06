@@ -16,6 +16,7 @@ const schema = z.object({
     .regex(/^[A-Z]{2}$/)
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  CRON_SECRET: optional,
   BUSINESS_LEGAL_NAME: optional,
   BUSINESS_ADDRESS: optional,
   BUSINESS_GSTIN: optional,

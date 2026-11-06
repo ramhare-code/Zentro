@@ -84,6 +84,7 @@ export default async function ProductPage({ params }: Props) {
 
       <div className="mt-5">
         <ProductInteractive
+          productId={product.id}
           productName={product.name}
           media={product.media}
           variants={product.variants}

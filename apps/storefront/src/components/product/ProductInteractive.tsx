@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { addToCartAction } from "@/lib/actions/cart";
+import { track } from "@/lib/analytics-client";
 import clsx from "clsx";
 import type { Media, Variant } from "@/lib/catalog";
 import { Price } from "../catalog/Price";
@@ -8,6 +12,7 @@ import { StockBadge } from "../catalog/StockBadge";
 import { Gallery } from "./Gallery";
 
 interface Props {
+  productId: string;
   productName: string;
   media: Media[];
   variants: Variant[];
@@ -15,9 +20,13 @@ interface Props {
   header: React.ReactNode;
 }
 
-export function ProductInteractive({ productName, media, variants, optionNames, header }: Props) {
+export function ProductInteractive({ productId, productName, media, variants, optionNames, header }: Props) {
   const initial = variants.find((v) => v.stock > 0) ?? variants[0]!;
   const [selected, setSelected] = useState<Record<string, string>>(initial.options);
+  const [qty, setQty] = useState(1);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, start] = useTransition();
+  const router = useRouter();
 
   // Deep link: ?variant=SKU selects that variant.
   useEffect(() => {
@@ -99,15 +108,43 @@ export function ProductInteractive({ productName, media, variants, optionNames, 
             </fieldset>
           ))}
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <button type="button" disabled className="h-12 rounded-full bg-white font-semibold text-brand-700 ring-1 ring-inset ring-brand-200 disabled:cursor-not-allowed disabled:opacity-60">
-              Add to cart
+          {variant && variant.stock > 0 && (
+            <label className="mt-6 flex items-center gap-3 text-sm font-semibold">
+              Quantity
+              <select value={qty} onChange={(e) => setQty(Number(e.target.value))} className="h-10 rounded-xl bg-white px-3 ring-1 ring-line-strong">
+                {Array.from({ length: Math.min(10, variant.stock) }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+          )}
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              disabled={!variant || variant.stock <= 0 || pending}
+              onClick={() => variant && start(async () => {
+                const r = await addToCartAction(variant.id, qty);
+                setMsg(r.ok ? { ok: true, text: "Added to your cart." } : { ok: false, text: r.error ?? "Couldn’t add to cart." });
+                if (r.ok) { window.dispatchEvent(new Event("zentro:cart")); track("add_to_cart", { productId, valuePaise: variant.pricePaise * qty }); }
+              })}
+              className="h-12 rounded-full bg-white font-semibold text-brand-700 ring-1 ring-inset ring-brand-200 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pending ? "Adding…" : "Add to cart"}
             </button>
-            <button type="button" disabled className="h-12 rounded-full bg-accent-400 font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60">
+            <button
+              type="button"
+              disabled={!variant || variant.stock <= 0}
+              onClick={() => { if (variant) { track("add_to_cart", { productId, valuePaise: variant.pricePaise * qty }); router.push(`/checkout?buy=${variant.id}&qty=${qty}`); } }}
+              className="h-12 rounded-full bg-accent-400 font-semibold text-ink hover:bg-accent-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               Buy now
             </button>
           </div>
-          <p className="mt-3 text-center text-xs text-ink-muted">Cart and secure checkout are being enabled — coming soon.</p>
+          <div aria-live="polite" className="min-h-6">
+            {msg && (
+              <p className={`mt-3 text-center text-sm font-medium ${msg.ok ? "text-success-700" : "text-danger-700"}`}>
+                {msg.text} {msg.ok && <Link href="/cart" className="underline">View cart</Link>}
+              </p>
+            )}
+          </div>
           {variant && <p className="mt-4 text-xs text-ink-subtle">SKU: {variant.sku}</p>}
         </div>
       </div>

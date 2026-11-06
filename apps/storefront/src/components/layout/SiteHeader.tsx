@@ -5,6 +5,7 @@ import { CartIcon, HeartIcon, UserIcon } from "../icons";
 import { Logo } from "./Logo";
 import { MobileMenu } from "./MobileMenu";
 import { SearchBox } from "./SearchBox";
+import { CartBadge } from "./CartBadge";
 
 export async function SiteHeader() {
   const all = await getCategories();
@@ -31,6 +32,7 @@ export async function SiteHeader() {
           </Link>
           <Link href="/cart" className={iconLink} aria-label="Cart">
             <CartIcon />
+            <CartBadge />
           </Link>
         </nav>
       </div>

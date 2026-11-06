@@ -5,9 +5,15 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./db": "./src/db.ts"
+    "./db": "./src/db.ts",
+    "./orders": "./src/orders.ts",
+    "./razorpay": "./src/razorpay.ts"
   },
   "dependencies": {
     "postgres": "3.4.9"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p ."
   }
 }
