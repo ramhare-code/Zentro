@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* Zentro Admin tokens — same brand family as the storefront, denser and calmer. */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-brand-50: #f5f0ff;
+  --color-brand-100: #ebe1ff;
+  --color-brand-200: #d6c4ff;
+  --color-brand-500: #7a42e6;
+  --color-brand-600: #6d35d4;
+  --color-brand-700: #5527ad;
+  --color-brand-900: #2c1460;
+
+  --color-ink: #16151c;
+  --color-ink-muted: #5b5a66;
+  --color-ink-subtle: #75747f;
+  --color-surface: #ffffff;
+  --color-canvas: #f4f4f8;
+  --color-line: #e6e5ee;
+  --color-line-strong: #cfcdda;
+  --color-sidebar: #17132a;
+
+  --color-good-50: #ecfdf3;   --color-good-700: #0f7a43;
+  --color-warn-50: #fff7e6;   --color-warn-700: #9a5b00;
+  --color-bad-50: #fef1f0;    --color-bad-700: #b42318;
+  --color-info-50: #eef4ff;   --color-info-700: #1f4fbf;
+
+  --shadow-card: 0 1px 2px rgb(22 21 28 / 0.05), 0 4px 16px rgb(22 21 28 / 0.05);
+  --shadow-pop: 0 12px 40px rgb(22 21 28 / 0.18);
+}
+
+@layer base {
+  body { @apply bg-canvas text-ink font-sans antialiased; }
+  :focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: 2px; border-radius: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+@utility card { @apply rounded-2xl bg-surface shadow-card ring-1 ring-line; }
+@utility input {
+  @apply h-11 w-full rounded-xl border border-line-strong bg-white px-3.5 text-[0.95rem] text-ink placeholder:text-ink-subtle focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200;
+}
+@utility btn {
+  @apply inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+}
+@utility btn-primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
+@utility btn-secondary { @apply bg-white text-ink ring-1 ring-inset ring-line-strong hover:bg-canvas; }
+@utility btn-danger { @apply bg-bad-700 text-white hover:bg-bad-700/90; }

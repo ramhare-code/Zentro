@@ -1,9 +1,9 @@
-# Operating the store (no admin panel)
+# Operating the store
 
-By design there is no admin website or public management endpoint. Catalogue and order
-operations are done by authorised people through **Supabase's authenticated dashboard**
-(Table editor / SQL editor, protected by your Supabase account login + 2FA) or through
-reviewed SQL scripts. Grant dashboard access only to the people who need it.
+Day-to-day operations move into the **Zentro Admin** website (`apps/admin`, see
+`docs/ADMIN.md`) as each admin phase ships. Until a section is available there, use
+**Supabase's authenticated dashboard** (Table editor / SQL editor, protected by your
+Supabase login + 2FA) or reviewed SQL scripts, as below.
 
 ## Adding a product
 

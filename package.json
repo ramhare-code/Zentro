@@ -1,38 +1,20 @@
 {
   "name": "zentro",
-  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=20.9"
-  },
+  "engines": { "node": ">=20.9" },
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:e2e": "playwright test --trace off",
+    "dev:store": "npm run dev -w @zentro/storefront",
+    "dev:admin": "npm run dev -w @zentro/admin",
+    "build": "npm run build -w @zentro/storefront && npm run build -w @zentro/admin",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:seed:dev": "node scripts/migrate.mjs --seed-dev"
+    "db:seed:dev": "node scripts/migrate.mjs --seed-dev",
+    "admin:create-owner": "node scripts/create-owner.mjs"
   },
   "dependencies": {
-    "clsx": "^2.1.1",
-    "next": "^16.4.5",
-    "postgres": "^3.4.9",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "server-only": "^0.0.1",
-    "zod": "^4.6.7"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.63.0",
-    "@tailwindcss/postcss": "^4.3.4",
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "tailwindcss": "^4.3.4",
-    "typescript": "5.9",
-    "vitest": "^5.1.0"
+    "postgres": "3.4.9"
   }
 }
