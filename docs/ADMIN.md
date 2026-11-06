@@ -65,11 +65,13 @@ npx next build && npm run test:e2e   # fresh DB → owner bootstrap → MFA logi
 | Visitor analytics — live visitors, page views, sessions, funnel, sources, devices (#81, 84–86 partly) | **Done** |
 | Orders — list, filters, detail, validated status flow, shipping + tracking, cancel + Razorpay refund, notes, audit (#41–45, 47–50, 65–66 partly) | **Done** |
 | Customer messaging — templates, one-to-one, campaigns, scheduling, approval, consent ledger, unsubscribe, delivery reports, costs, analytics (#101–120) | **Done** (needs provider accounts, see `docs/MESSAGING.md`) |
+| Customers — directory, profile with orders/tickets/consent, restrict/restore, sign-out, data export, erasure (#51–56, 59–60) | **Done** |
+| Support tickets — queue, priority, assignment, replies, internal notes (#88) | **Done** |
+| Review moderation (#89) · Returns & refunds with Razorpay, Refunds page (#48, 65–66) | **Done** |
 | Catalogue management (#11–30) | Next |
 | Inventory, suppliers, purchase orders (#31–40) | Planned |
-| Customers directory & privacy requests (#51–60) | Planned (needs customer accounts on the storefront) |
 | Payments dashboard, reconciliation, finance reports, invoices, tax rules (#61–64, 67–70) | Planned |
-| Coupons, promotions, banners, content (#71–80), support tickets, review moderation (#88–89) | Planned |
+| Coupons, promotions, banners, content (#71–80) | Planned |
 | Hardening & deployment (#96–100) | Planned |
 
 Dashboard figures are computed from real tables. "Net revenue" = paid orders in

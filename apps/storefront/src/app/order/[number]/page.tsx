@@ -139,7 +139,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             </section>
           ))}
           {canReturn && <ReturnRequest orderNumber={o.orderNumber} token={t} items={o.returnable} deadline={d.format(returnDeadline!)} />}
-          <p className="text-center text-sm"><Link href="/help" className="font-semibold text-brand-700 hover:underline">Need help with this order?</Link></p>
+          <p className="text-center text-sm"><Link href={`/support/new?order=${o.orderNumber}`} className="font-semibold text-brand-700 hover:underline">Need help with this order?</Link></p>
         </aside>
       </div>
     </div>

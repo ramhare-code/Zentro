@@ -32,8 +32,8 @@ export const NAV: { section: string; items: NavItem[] }[] = [
     { href: "/finance", label: "Finance", permission: "finance.read", phase: 6, icon: "rupee" },
   ] },
   { section: "Customers", items: [
-    { href: "/customers", label: "Customers", permission: "customers.read", phase: 5, icon: "users" },
-    { href: "/support", label: "Support", permission: "support.manage", phase: 5, icon: "headset" },
+    { href: "/customers", label: "Customers", permission: "customers.read", phase: 1, icon: "users" },
+    { href: "/support", label: "Support", permission: "support.manage", phase: 1, icon: "headset" },
     { href: "/reviews", label: "Reviews", permission: "reviews.moderate", phase: 1, icon: "star" },
     { href: "/messages", label: "Messaging", permission: "messages.read", phase: 1, icon: "message" },
   ] },

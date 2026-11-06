@@ -8,7 +8,8 @@
     "./db": "./src/db.ts",
     "./orders": "./src/orders.ts",
     "./razorpay": "./src/razorpay.ts",
-    "./messaging": "./src/messaging.ts"
+    "./messaging": "./src/messaging.ts",
+    "./support": "./src/support.ts"
   },
   "dependencies": {
     "postgres": "3.4.9"

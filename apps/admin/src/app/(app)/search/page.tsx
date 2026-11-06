@@ -63,7 +63,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         <section className="card p-5"><h2 className="font-semibold">Customers</h2>
           <ul className="mt-3 divide-y divide-line">{customers.map((c) => (
             <li key={c.id} className="flex justify-between gap-2 py-2.5 text-sm">
-              <Link href={`/customers?q=${encodeURIComponent(c.email ?? "")}`} className="font-semibold text-brand-700 hover:underline">{c.name ?? "Customer"}</Link>
+              <Link href={`/customers/${c.id}`} className="font-semibold text-brand-700 hover:underline">{c.name ?? "Customer"}</Link>
               <span className="text-ink-muted">{c.email ? (pii ? c.email : maskEmail(c.email)) : "—"}</span>
             </li>))}</ul>
         </section>

@@ -59,7 +59,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             ))}
           </ul>
         )}
-        <Link href="/account/orders" className="mt-3 inline-block text-sm font-semibold text-brand-700 hover:underline">All orders →</Link>
+        <span className="mt-3 flex gap-4"><Link href="/account/orders" className="text-sm font-semibold text-brand-700 hover:underline">All orders →</Link><Link href="/account/support" className="text-sm font-semibold text-brand-700 hover:underline">Support requests →</Link></span>
       </Section>
 
       <Section id="profile-h" title="Profile">

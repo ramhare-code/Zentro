@@ -13,7 +13,7 @@ export default async function HelpPage() {
     <div className="container-page max-w-3xl py-8">
       <h1 className="font-display text-3xl font-bold tracking-tight">Help centre</h1>
       <p className="mt-2 text-ink-muted">
-        Answers to common questions. Can’t find what you need? <Link href="/contact" className="font-semibold text-brand-700 hover:underline">Contact us</Link>.
+        Answers to common questions. Can’t find what you need? <Link href="/support/new" className="font-semibold text-brand-700 hover:underline">Send us a request</Link> and we’ll reply by email.
       </p>
       {topics.map((t) => (
         <section key={t} aria-labelledby={`t-${t}`} className="mt-8">

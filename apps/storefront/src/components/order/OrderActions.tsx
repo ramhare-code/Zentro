@@ -12,7 +12,7 @@ export function OrderActions({ orderNumber, token, canCancel, canPay }: { orderN
   const [msg, setMsg] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState("");
-  if (!canCancel && !canPay) return null;
+  if (!canCancel && !canPay && !msg) return null;
   return (
     <div className="space-y-3">
       {canPay && (

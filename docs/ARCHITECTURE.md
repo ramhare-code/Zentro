@@ -9,7 +9,7 @@
 | Database | **PostgreSQL (Supabase)** | Transactional, row locks for inventory, full-text + trigram search built in. |
 | Data access | **`postgres` (porsager) with hand-written, parameterised SQL** | Checkout needs explicit `SELECT … FOR UPDATE` locking and idempotency; plain SQL keeps those guarantees visible and reviewable. Every value is a bound parameter, so SQL injection is not possible through the query builder. |
 | Migrations | Plain SQL in `db/migrations`, applied by `scripts/migrate.mjs` | Ordered, tracked in `shop.schema_migrations`, each file in its own transaction. Same files can be applied through the Supabase dashboard or CLI. |
-| Auth (Phase 3) | **Supabase Auth** | Email verification, password reset, phone OTP via a licensed SMS provider, session refresh — no passwords stored by us. |
+| Customer accounts | **Zentro-managed** (`shop.customers`) | scrypt passwords, hashed session tokens, email verification and password reset links and phone OTP sent through the store's own email/SMS providers. Chosen over Supabase Auth so identity lives with orders in one database and every flow is testable without a live auth service. |
 | Payments (Phase 4) | **Razorpay** | UPI, cards, net banking and wallets for Indian businesses; server-side signature + webhook verification. |
 | Media | **Supabase Storage** (public bucket for product media, private bucket for review images) | Object storage on the same project; served via Next image optimisation. |
 | Hosting | **Vercel** | Preview deployments = staging, production branch = production, each with its own env vars. |
@@ -72,7 +72,7 @@ listings are rendered on demand. Autocomplete responses are CDN-cached for 60 s.
 
 1. ✅ Project, architecture, database, design system, homepage
 2. ✅ Categories, listings, search, filters, sorting, product detail pages
-3. ⏳ Accounts (Supabase Auth), profiles, addresses, cart, wishlist
-4. ⏳ Checkout, Razorpay payment verification, order creation, inventory integrity
-5. ⏳ Tracking, cancellations, returns, refunds, reviews, notifications, support tickets
+3. ✅ Accounts, profiles, addresses, cart, wishlist
+4. ✅ Checkout, Razorpay payment verification, order creation, inventory integrity
+5. ✅ Tracking, cancellations, returns, refunds, reviews, notifications, support tickets (review images not yet)
 6. ⏳ Hardening (CSP, rate limits), performance, SEO, accessibility audit, CI, monitoring, launch
