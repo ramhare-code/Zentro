@@ -80,8 +80,8 @@ test("finance reconciles payments with Razorpay, retries a failed event and matc
   await expect(page.getByRole("status")).toContainText("second payment");
   const [ref] = await sql<{ status: string; amount: number }[]>`select status, amount_paise as amount from shop.refunds where payment_id = ${p2!.id}`;
   expect(ref).toEqual({ status: "processed", amount: orders.paidLost.total });
-  const [o] = await sql<{ status: string }[]>`select status from shop.orders where id = ${orders.paidLost.id}`;
-  expect(o!.status).toBe("confirmed"); // the original order is untouched
+  const [o] = await sql<{ status: string; payment: string }[]>`select status, payment_status as payment from shop.orders where id = ${orders.paidLost.id}`;
+  expect(o).toEqual({ status: "confirmed", payment: "paid" }); // the original order is untouched
   await sql.end();
 
   // ---- a failed gateway event can be retried, and only once

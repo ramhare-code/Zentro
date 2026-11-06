@@ -29,7 +29,7 @@ export const NAV: { section: string; items: NavItem[] }[] = [
     { href: "/orders", label: "Orders", permission: "orders.read", phase: 1, icon: "cart" },
     { href: "/payments", label: "Payments", permission: "payments.read", phase: 1, icon: "card" },
     { href: "/refunds", label: "Refunds", permission: "refunds.create", phase: 1, icon: "undo" },
-    { href: "/finance", label: "Finance", permission: "finance.read", phase: 6, icon: "rupee" },
+    { href: "/finance", label: "Finance", permission: "finance.read", phase: 1, icon: "rupee" },
   ] },
   { section: "Customers", items: [
     { href: "/customers", label: "Customers", permission: "customers.read", phase: 1, icon: "users" },

@@ -52,6 +52,14 @@ Use those functions rather than editing order rows directly.
 - **Duplicate charges:** if a customer pays twice for one order, the second payment is refunded automatically and noted on the order.
 - **Settlements:** weekly, download the Settlement recon report (CSV) from Razorpay → Reports and upload it on Reconciliation. Choose whether amounts are in rupees or paise. *Check* compares only; *Record* stores fees and settlement ids for lines that match amount and status exactly. Mismatches and unknown ids are listed for you to investigate in Razorpay — nothing is changed for them. Column names in Razorpay reports can change; the importer accepts the common ones (`entity_id`/`payment_id`/`id`, `amount`/`credit`/`debit`, `fee`, `tax`, `settlement_id`, `settled_at`). Check the first import's totals against the report.
 
+## Finance and GST
+
+- **What profit includes:** net sales (ex-GST, on invoice date) minus returns/cancellations (credit notes), cost of goods (unit cost captured at the time of sale from your latest purchase-order cost) and Razorpay fees (ex-GST). It does **not** include courier bills, packaging, ads, salaries or rent.
+- **Costs:** sales of items with no cost price are flagged on the Finance page. Receive stock through purchase orders so each SKU has a cost.
+- **GST filing:** Finance → GST gives B2C figures by rate, by place of supply (GSTR-1 B2CS) and by HSN (Table 12), net of credit notes. Export them and review with your accountant; Zentro does not file returns.
+- **Shipping:** shipping is currently charged without GST. If your accountant confirms it should be taxed as part of a composite supply, the pricing rules need changing before launch.
+- **Set on the admin site:** `BUSINESS_LEGAL_NAME`, `BUSINESS_GSTIN`, `SELLER_STATE_CODE` (same as the storefront).
+
 ## Before launch — business checklist
 
 * Real catalogue, prices, HSN codes and GST rates confirmed with your accountant.

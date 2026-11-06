@@ -207,10 +207,10 @@ export async function placeOrder(sql: Sql, input: PlaceOrderInput): Promise<Plac
     for (const l of q.lines) {
       await tx`
         insert into shop.order_items (order_id, product_id, variant_id, product_name, variant_label, sku, image_url, hsn_code,
-          quantity, unit_price_paise, unit_mrp_paise, discount_paise, line_total_paise, gst_rate, taxable_paise, cgst_paise, sgst_paise, igst_paise)
+          quantity, unit_price_paise, unit_mrp_paise, discount_paise, line_total_paise, gst_rate, taxable_paise, cgst_paise, sgst_paise, igst_paise, unit_cost_paise)
         values (${orderId}, ${l.productId}, ${l.variantId}, ${l.productName}, ${l.variantLabel}, ${l.sku}, ${l.imageUrl}, ${l.hsnCode},
           ${l.quantity}, ${l.unitPricePaise}, ${l.unitMrpPaise}, ${l.discountPaise}, ${l.lineTotalPaise}, ${l.gstRate}, ${l.taxablePaise},
-          ${l.cgstPaise}, ${l.sgstPaise}, ${l.igstPaise})`;
+          ${l.cgstPaise}, ${l.sgstPaise}, ${l.igstPaise}, (select cost_paise from shop.product_variants where id = ${l.variantId}))`;
       // rows are locked by quote(); this cannot oversell (CHECK stock >= 0 is the last line of defence)
       await tx`update shop.product_variants set stock = stock - ${l.quantity} where id = ${l.variantId}`;
       await tx`insert into shop.inventory_reservations (order_id, variant_id, quantity, expires_at)
@@ -376,15 +376,80 @@ export async function applyRefundStatus(sql: Sql, refundId: string, providerRefu
       where id = ${refundId} returning order_id as "orderId", status as prev`;
     if (!r) return;
     if (status === "processed") {
-      const [t] = await tx<{ refunded: number; total: number }[]>`
-        select coalesce(sum(amount_paise) filter (where status = 'processed'), 0)::int as refunded,
-               (select total_paise from shop.orders where id = ${r.orderId}) as total
+      // a refunded duplicate payment returns extra money; the order itself stays paid
+      const [t] = await tx<{ refunded: number; total: number; duplicate: boolean }[]>`
+        select coalesce(sum(amount_paise) filter (where status = 'processed' and reason is distinct from 'Duplicate payment'), 0)::int as refunded,
+               (select total_paise from shop.orders where id = ${r.orderId}) as total,
+               bool_or(id = ${refundId} and reason = 'Duplicate payment') as duplicate
         from shop.refunds where order_id = ${r.orderId}`;
-      await tx`update shop.orders set payment_status = ${t!.refunded >= t!.total ? "refunded" : "partially_refunded"} where id = ${r.orderId}`;
+      if (!t!.duplicate) await tx`update shop.orders set payment_status = ${t!.refunded >= t!.total ? "refunded" : "partially_refunded"} where id = ${r.orderId}`;
       await tx`update shop.return_requests set status = 'refunded' where refund_id = ${refundId} and status = 'received'`;
+      await issueCreditNote(tx, refundId);
       await enqueueOrderNotification(tx, r.orderId, "refund_processed", { dedupeSuffix: refundId });
     }
   });
+}
+
+/** Indian financial year label for a date, e.g. 2026-27 (April–March, IST). */
+export function financialYear(d: Date): string {
+  const ist = new Date(d.getTime() + 330 * 60_000);
+  const y = ist.getUTCFullYear(), start = ist.getUTCMonth() >= 3 ? y : y - 1;
+  return `${start}-${String((start + 1) % 100).padStart(2, "0")}`;
+}
+
+/** Splits a credit across lines in proportion, keeping the integer total exact. */
+export function prorate(values: number[], target: number): number[] {
+  const sum = values.reduce((a, b) => a + b, 0);
+  if (sum === 0) return values.map(() => 0);
+  const out = values.map((v) => Math.floor((v * target) / sum));
+  let rest = target - out.reduce((a, b) => a + b, 0);
+  for (let i = 0; rest > 0; i = (i + 1) % out.length) if (values[i]! > 0) { out[i]!++; rest--; }
+  return out;
+}
+
+/**
+ * Issues a GST credit note for a processed refund that reverses a supply
+ * (returned items, or cancellation of an invoiced order). Idempotent per refund.
+ */
+export async function issueCreditNote(tx: TransactionSql, refundId: string) {
+  const [r] = await tx<{ orderId: string; returnId: string | null; reason: string | null; amount: number; invoiceId: string | null }[]>`
+    select r.order_id as "orderId", r.return_request_id as "returnId", r.reason, r.amount_paise as amount,
+           (select id from shop.invoices i where i.order_id = r.order_id) as "invoiceId"
+    from shop.refunds r where r.id = ${refundId} and r.status = 'processed'`;
+  if (!r?.invoiceId) return null;                       // nothing invoiced → nothing to reverse
+  if (r.reason === "Duplicate payment") return null;    // money returned, but no supply was reversed
+  const [exists] = await tx`select 1 from shop.credit_notes where refund_id = ${refundId}`;
+  if (exists) return null;
+  type L = { orderItemId: string; hsn: string | null; gstRate: string; quantity: number; taxable: number; cgst: number; sgst: number; igst: number };
+  const lines = r.returnId
+    ? await tx<L[]>`
+        select i.id as "orderItemId", i.hsn_code as hsn, i.gst_rate::text as "gstRate", ri.quantity,
+               round(i.taxable_paise::numeric * ri.quantity / i.quantity)::int as taxable, round(i.cgst_paise::numeric * ri.quantity / i.quantity)::int as cgst,
+               round(i.sgst_paise::numeric * ri.quantity / i.quantity)::int as sgst, round(i.igst_paise::numeric * ri.quantity / i.quantity)::int as igst
+        from shop.return_items ri join shop.order_items i on i.id = ri.order_item_id where ri.return_id = ${r.returnId} order by i.id`
+    : await tx<L[]>`
+        select i.id as "orderItemId", i.hsn_code as hsn, i.gst_rate::text as "gstRate", i.quantity - i.returned_quantity as quantity,
+               round(i.taxable_paise::numeric * (i.quantity - i.returned_quantity) / i.quantity)::int as taxable,
+               round(i.cgst_paise::numeric * (i.quantity - i.returned_quantity) / i.quantity)::int as cgst,
+               round(i.sgst_paise::numeric * (i.quantity - i.returned_quantity) / i.quantity)::int as sgst,
+               round(i.igst_paise::numeric * (i.quantity - i.returned_quantity) / i.quantity)::int as igst
+        from shop.order_items i where i.order_id = ${r.orderId} and i.quantity > i.returned_quantity order by i.id`;
+  let goods = lines.reduce((a, l) => a + l.taxable + l.cgst + l.sgst + l.igst, 0);
+  if (goods > r.amount) {
+    // partial refund: scale every component so the note equals what was refunded
+    const flat = lines.flatMap((l) => [l.taxable, l.cgst, l.sgst, l.igst]);
+    const scaled = prorate(flat, r.amount);
+    lines.forEach((l, i) => { [l.taxable, l.cgst, l.sgst, l.igst] = scaled.slice(i * 4, i * 4 + 4) as [number, number, number, number]; });
+    goods = r.amount;
+  }
+  const sum = (k: "taxable" | "cgst" | "sgst" | "igst") => lines.reduce((a, l) => a + l[k], 0);
+  const [n] = await tx<{ n: string }[]>`select lpad(nextval('shop.credit_note_seq')::text, 6, '0') as n`;
+  const number = `ZN/CN/${financialYear(new Date())}/${n!.n}`;
+  await tx`
+    insert into shop.credit_notes (credit_note_number, order_id, invoice_id, refund_id, reason, taxable_paise, cgst_paise, sgst_paise, igst_paise, other_paise, total_paise, lines)
+    values (${number}, ${r.orderId}, ${r.invoiceId}, ${refundId}, ${r.returnId ? "Goods returned" : r.reason ?? "Order cancelled"},
+            ${sum("taxable")}, ${sum("cgst")}, ${sum("sgst")}, ${sum("igst")}, ${r.amount - goods}, ${r.amount}, ${tx.json(lines as never)})`;
+  return number;
 }
 
 /** Looks up an order for a guest using its number and the secret token from the confirmation link. */

@@ -11,7 +11,7 @@ export const E2E_DB = process.env.E2E_DATABASE_URL ?? "postgres://zentro:zentro@
 
 export default defineConfig({
   testDir: "tests/e2e",
-  testMatch: ["orders.spec.ts", "messaging.spec.ts", "reviews.spec.ts", "returns.spec.ts", "support.spec.ts", "catalog.spec.ts", "inventory.spec.ts", "payments.spec.ts", "admin.spec.ts"],
+  testMatch: ["orders.spec.ts", "messaging.spec.ts", "reviews.spec.ts", "returns.spec.ts", "support.spec.ts", "catalog.spec.ts", "inventory.spec.ts", "payments.spec.ts", "finance.spec.ts", "admin.spec.ts"],
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,
   workers: 1,
@@ -28,6 +28,6 @@ export default defineConfig({
     timeout: 120_000,
     env: { DATABASE_URL: E2E_DB, ADMIN_URL: `http://localhost:${port}`, STOREFRONT_URL: "http://localhost:3202", REVALIDATE_SECRET: "e2e-revalidate", APP_ENV: "development",
            ADMIN_ENCRYPTION_KEY: Buffer.alloc(32, 9).toString("base64"), ...MESSAGING_ENV,
-           RAZORPAY_KEY_ID: "rzp_test_mock", RAZORPAY_KEY_SECRET: "mock_secret", RAZORPAY_API_BASE: "http://localhost:3999" },
+           RAZORPAY_KEY_ID: "rzp_test_mock", RAZORPAY_KEY_SECRET: "mock_secret", RAZORPAY_API_BASE: "http://localhost:3999", SELLER_STATE_CODE: "KA" },
   }],
 });
