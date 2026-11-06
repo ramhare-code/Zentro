@@ -83,7 +83,9 @@ test("cart → checkout with coupon → verified payment → confirmed order", a
   expect(items[0]!.cgst + items[0]!.sgst).toBe(o!.tax);
   const consents = await s`select channel, status from shop.marketing_consents where recipient = '9876543210'`;
   expect(consents.map((c) => c.channel)).toEqual(["sms"]);
-  const outbox = await s<{ channel: string }[]>`select channel from shop.notification_outbox where template = 'order_confirmed' order by channel`;
+  const outbox = await s<{ channel: string }[]>`
+    select channel from shop.notification_outbox where template = 'order_confirmed'
+      and payload->>'orderId' = (select id::text from shop.orders where order_number = ${orderNumber}) order by channel`;
   expect(outbox.map((x) => x.channel)).toEqual(["email", "sms"]);
   await s.end();
   expect(await stockOf("ZN-003-2")).toBe(before - 2);
