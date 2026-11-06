@@ -11,18 +11,20 @@ export const E2E_DB = process.env.E2E_DATABASE_URL ?? "postgres://zentro:zentro@
 
 export default defineConfig({
   testDir: "tests/e2e",
-  testMatch: ["orders.spec.ts", "messaging.spec.ts", "reviews.spec.ts", "admin.spec.ts"],
+  testMatch: ["orders.spec.ts", "messaging.spec.ts", "reviews.spec.ts", "returns.spec.ts", "admin.spec.ts"],
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,
   workers: 1,
   use: { baseURL: `http://localhost:${port}` },
   projects: [{ name: "desktop", use: { ...devices["Desktop Chrome"] } }],
-  webServer: [{ command: "node tests/e2e/mock-messaging.mjs", port: 3998, reuseExistingServer: false }, {
+  webServer: [{ command: "node tests/e2e/mock-messaging.mjs", port: 3998, reuseExistingServer: false },
+    { command: "node ../storefront/tests/e2e/mock-razorpay.mjs", port: 3999, reuseExistingServer: false }, {
     command: `npx next start -p ${port}`,
     port,
     reuseExistingServer: false,
     timeout: 120_000,
     env: { DATABASE_URL: E2E_DB, ADMIN_URL: `http://localhost:${port}`, STOREFRONT_URL: "http://localhost:3000", APP_ENV: "development",
-           ADMIN_ENCRYPTION_KEY: Buffer.alloc(32, 9).toString("base64"), ...MESSAGING_ENV },
+           ADMIN_ENCRYPTION_KEY: Buffer.alloc(32, 9).toString("base64"), ...MESSAGING_ENV,
+           RAZORPAY_KEY_ID: "rzp_test_mock", RAZORPAY_KEY_SECRET: "mock_secret", RAZORPAY_API_BASE: "http://localhost:3999" },
   }],
 });

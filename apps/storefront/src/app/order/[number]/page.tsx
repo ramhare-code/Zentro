@@ -6,6 +6,8 @@ import { formatPaise, ORDER_STATUS_LABELS, stateName, type OrderStatus } from "@
 import { findOrderForGuest } from "@zentro/commerce/orders";
 import { OrderActions } from "@/components/order/OrderActions";
 import { ReviewForm } from "@/components/engage/ReviewForm";
+import { ReturnRequest } from "@/components/order/ReturnRequest";
+import { RETURN_REASONS, RETURN_STATUS_LABELS } from "@zentro/commerce/orders";
 import { db } from "@/lib/db";
 import { getOrderView } from "@/lib/order-view";
 
@@ -35,6 +37,9 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const cancelled = o.status === "cancelled";
   const canCancel = ["pending_payment", "payment_failed", "confirmed", "processing"].includes(o.status);
   const canPay = o.reservationOpen;
+  const windowDays = Number(process.env.RETURN_WINDOW_DAYS) || 7;
+  const returnDeadline = o.deliveredAt ? new Date(o.deliveredAt.getTime() + windowDays * 86_400_000) : null;
+  const canReturn = ["delivered", "return_requested"].includes(o.status) && !!returnDeadline && returnDeadline > new Date() && o.returnable.length > 0;
 
   return (
     <div className="container-page max-w-5xl py-8">
@@ -126,6 +131,14 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             </address>
           </section>
           <OrderActions orderNumber={o.orderNumber} token={t} canCancel={canCancel} canPay={canPay} />
+          {o.returns.map((r) => (
+            <section key={r.id} className="rounded-card bg-white p-5 text-sm ring-1 ring-line" aria-label="Return">
+              <p className="font-semibold">Return: {RETURN_STATUS_LABELS[r.status] ?? r.status}</p>
+              <p className="mt-1 text-ink-muted">{r.items.map((i) => `${i.quantity} × ${i.name}`).join(", ")} · {RETURN_REASONS[r.reason as keyof typeof RETURN_REASONS] ?? r.reason}</p>
+              {r.note && <p className="mt-2 rounded-lg bg-canvas p-2">{r.note}</p>}
+            </section>
+          ))}
+          {canReturn && <ReturnRequest orderNumber={o.orderNumber} token={t} items={o.returnable} deadline={d.format(returnDeadline!)} />}
           <p className="text-center text-sm"><Link href="/help" className="font-semibold text-brand-700 hover:underline">Need help with this order?</Link></p>
         </aside>
       </div>

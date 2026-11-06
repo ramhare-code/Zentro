@@ -5,6 +5,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Sql, TransactionSql } from "./db";
 import { canTransition, type OrderStatus } from "./order-status";
 import { couponDiscount, priceLines } from "./pricing";
+import { formatPaise } from "./money";
 import { STATE_CODES } from "./states";
 
 export class CheckoutError extends Error {}
@@ -380,6 +381,7 @@ export async function applyRefundStatus(sql: Sql, refundId: string, providerRefu
                (select total_paise from shop.orders where id = ${r.orderId}) as total
         from shop.refunds where order_id = ${r.orderId}`;
       await tx`update shop.orders set payment_status = ${t!.refunded >= t!.total ? "refunded" : "partially_refunded"} where id = ${r.orderId}`;
+      await tx`update shop.return_requests set status = 'refunded' where refund_id = ${refundId} and status = 'received'`;
       await enqueueOrderNotification(tx, r.orderId, "refund_processed", { dedupeSuffix: refundId });
     }
   });
@@ -449,5 +451,125 @@ export async function advanceOrder(
     await tx`insert into shop.order_events (order_id, status, note, actor) values (${orderId}, ${to}, ${opts.note?.slice(0, 300) ?? null}, ${opts.actor})`;
     const template = NOTIFY_ON[to];
     if (template) await enqueueOrderNotification(tx, orderId, template);
+  });
+}
+
+// ---------------------------------------------------------------------
+// Returns
+// ---------------------------------------------------------------------
+
+export const RETURN_REASONS = {
+  damaged: "Arrived damaged", defective: "Doesn’t work / defective", wrong_item: "Wrong item sent",
+  not_as_described: "Not as described", size_fit: "Size or fit issue", changed_mind: "Changed my mind", other: "Other",
+} as const;
+export type ReturnReason = keyof typeof RETURN_REASONS;
+
+export const RETURN_STATUS_LABELS: Record<string, string> = {
+  requested: "Requested", approved: "Approved", rejected: "Not approved", pickup_scheduled: "Pickup scheduled",
+  picked_up: "Picked up", received: "Received — refund in progress", refunded: "Refunded", cancelled: "Cancelled",
+};
+
+async function notifyReturn(tx: TransactionSql, orderId: string, returnId: string, status: string, message = "") {
+  await enqueueOrderNotification(tx, orderId, "return_update", { dedupeSuffix: `${returnId}:${status}`, status: RETURN_STATUS_LABELS[status] ?? status, message });
+}
+
+/** Items still eligible for return on an order (delivered quantity minus returned/open requests). */
+export async function returnableItems(sql: Sql | TransactionSql, orderId: string) {
+  return sql<{ id: string; productName: string; variantLabel: string | null; quantity: number; available: number }[]>`
+    select i.id, i.product_name as "productName", i.variant_label as "variantLabel", i.quantity,
+           (i.quantity - i.returned_quantity - coalesce((
+             select sum(ri.quantity) from shop.return_items ri join shop.return_requests rr on rr.id = ri.return_id
+             where ri.order_item_id = i.id and rr.status in ('requested','approved','pickup_scheduled','picked_up')), 0))::int as available
+    from shop.order_items i where i.order_id = ${orderId} order by i.product_name`;
+}
+
+export async function requestReturn(
+  sql: Sql, orderId: string,
+  input: { items: { orderItemId: string; quantity: number }[]; reason: ReturnReason; details?: string; windowDays: number; userId?: string | null },
+): Promise<string> {
+  return sql.begin(async (tx) => {
+    const [o] = await tx<{ status: OrderStatus; deliveredAt: Date | null; userId: string | null }[]>`
+      select status, delivered_at as "deliveredAt", user_id as "userId" from shop.orders where id = ${orderId} for update`;
+    if (!o) throw new CheckoutError("Order not found.");
+    if (o.status !== "delivered" && o.status !== "return_requested") throw new CheckoutError("Returns can be requested after delivery.");
+    if (!o.deliveredAt || Date.now() - o.deliveredAt.getTime() > input.windowDays * 86_400_000) {
+      throw new CheckoutError(`The ${input.windowDays}-day return window for this order has closed.`);
+    }
+    if (!(input.reason in RETURN_REASONS)) throw new CheckoutError("Choose a reason.");
+    const chosen = input.items.filter((i) => i.quantity > 0);
+    if (!chosen.length) throw new CheckoutError("Choose at least one item to return.");
+    const avail = await returnableItems(tx, orderId);
+    for (const c of chosen) {
+      const a = avail.find((x) => x.id === c.orderItemId);
+      if (!a || c.quantity > a.available) throw new CheckoutError(`You can return at most ${a?.available ?? 0} of ${a?.productName ?? "that item"}.`);
+    }
+    const [r] = await tx<{ id: string }[]>`
+      insert into shop.return_requests (order_id, user_id, reason, details) values (${orderId}, ${input.userId ?? o.userId}, ${input.reason}, ${input.details?.slice(0, 2000) || null}) returning id`;
+    for (const c of chosen) await tx`insert into shop.return_items (return_id, order_item_id, quantity) values (${r!.id}, ${c.orderItemId}, ${c.quantity})`;
+    if (o.status === "delivered") {
+      await tx`update shop.orders set status = 'return_requested' where id = ${orderId}`;
+      await tx`insert into shop.order_events (order_id, status, note, actor) values (${orderId}, 'return_requested', ${RETURN_REASONS[input.reason]}, 'customer')`;
+    }
+    await notifyReturn(tx, orderId, r!.id, "requested", "We’ll review your request and get back to you shortly.");
+    return r!.id;
+  });
+}
+
+/** Staff decisions before the items are back. */
+export async function updateReturn(sql: Sql, returnId: string, to: "approved" | "rejected" | "pickup_scheduled" | "picked_up", note?: string) {
+  const allowed: Record<string, string[]> = { requested: ["approved", "rejected"], approved: ["pickup_scheduled", "picked_up", "rejected"], pickup_scheduled: ["picked_up"], picked_up: [] };
+  await sql.begin(async (tx) => {
+    const [r] = await tx<{ orderId: string; status: string }[]>`select order_id as "orderId", status from shop.return_requests where id = ${returnId} for update`;
+    if (!r) throw new CheckoutError("Return not found.");
+    if (!allowed[r.status]?.includes(to)) throw new CheckoutError(`A return that is ${r.status.replace(/_/g, " ")} can’t become ${to.replace(/_/g, " ")}.`);
+    await tx`update shop.return_requests set status = ${to}, resolution_note = coalesce(${note?.slice(0, 500) || null}, resolution_note) where id = ${returnId}`;
+    if (to === "rejected") {
+      const [open] = await tx`select 1 from shop.return_requests where order_id = ${r.orderId} and id <> ${returnId} and status in ('requested','approved','pickup_scheduled','picked_up')`;
+      if (!open) await tx`update shop.orders set status = 'delivered' where id = ${r.orderId} and status = 'return_requested'`;
+    }
+    await tx`insert into shop.order_events (order_id, status, note, actor) values (${r.orderId}, ${"return_" + to}, ${note?.slice(0, 300) ?? null}, 'operations')`;
+    await notifyReturn(tx, r.orderId, returnId, to, note ?? "");
+  });
+}
+
+/**
+ * Items are back: restock, record returned quantities and create a refund
+ * for exactly those items (GST-inclusive line value, pro-rata incl. any
+ * coupon discount). Returns the refund to submit to the gateway.
+ */
+export async function receiveReturn(sql: Sql, returnId: string): Promise<{ refundId: string; providerPaymentId: string; amountPaise: number; orderId: string } | null> {
+  return sql.begin(async (tx) => {
+    const [r] = await tx<{ orderId: string; status: string }[]>`select order_id as "orderId", status from shop.return_requests where id = ${returnId} for update`;
+    if (!r) throw new CheckoutError("Return not found.");
+    if (!["approved", "pickup_scheduled", "picked_up"].includes(r.status)) throw new CheckoutError("Approve the return before receiving it.");
+    const items = await tx<{ orderItemId: string; variantId: string | null; productId: string | null; qty: number; lineTotal: number; quantity: number }[]>`
+      select ri.order_item_id as "orderItemId", i.variant_id as "variantId", i.product_id as "productId", ri.quantity as qty,
+             i.line_total_paise as "lineTotal", i.quantity
+      from shop.return_items ri join shop.order_items i on i.id = ri.order_item_id where ri.return_id = ${returnId} for update of i`;
+    let amount = 0;
+    for (const it of items) {
+      amount += Math.round((it.lineTotal * it.qty) / it.quantity);
+      await tx`update shop.order_items set returned_quantity = returned_quantity + ${it.qty} where id = ${it.orderItemId}`;
+      if (it.variantId) await tx`update shop.product_variants set stock = stock + ${it.qty} where id = ${it.variantId}`;
+      if (it.productId) await tx`update shop.products set units_sold = greatest(0, units_sold - ${it.qty}) where id = ${it.productId}`;
+    }
+    const [pay] = await tx<{ id: string; providerPaymentId: string }[]>`
+      select id, provider_payment_id as "providerPaymentId" from shop.payments where order_id = ${r.orderId} and status = 'captured' limit 1`;
+    const [left] = await tx<{ n: number }[]>`select coalesce(sum(quantity - returned_quantity), 0)::int as n from shop.order_items where order_id = ${r.orderId}`;
+    const [open] = await tx`select 1 from shop.return_requests where order_id = ${r.orderId} and id <> ${returnId} and status in ('requested','approved','pickup_scheduled','picked_up')`;
+    await tx`update shop.orders set status = ${left!.n === 0 ? "returned" : open ? "return_requested" : "delivered"} where id = ${r.orderId}`;
+    let refund = null;
+    if (pay && amount > 0) {
+      const [rf] = await tx<{ id: string }[]>`
+        insert into shop.refunds (order_id, payment_id, return_request_id, amount_paise, reason) values (${r.orderId}, ${pay.id}, ${returnId}, ${amount}, 'Return received') returning id`;
+      await tx`update shop.return_requests set status = 'received', refund_id = ${rf!.id} where id = ${returnId}`;
+      await tx`update shop.orders set payment_status = 'refund_pending' where id = ${r.orderId}`;
+      refund = { refundId: rf!.id, providerPaymentId: pay.providerPaymentId, amountPaise: amount, orderId: r.orderId };
+    } else {
+      await tx`update shop.return_requests set status = 'received' where id = ${returnId}`;
+    }
+    await tx`insert into shop.order_events (order_id, status, note, actor) values (${r.orderId}, 'return_received', ${`Items received; refund of ${formatPaise(amount)}`}, 'operations')`;
+    await notifyReturn(tx, r.orderId, returnId, "received", `We’ve received your items. A refund of ${formatPaise(amount)} has been started to your original payment method.`);
+    return refund;
   });
 }

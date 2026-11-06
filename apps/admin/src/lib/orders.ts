@@ -51,7 +51,7 @@ export async function getOrderDetail(id: string) {
            o.created_at as "createdAt", o.placed_at as "placedAt", o.cancel_reason as "cancelReason", inv.invoice_number as "invoiceNumber"
     from shop.orders o left join shop.invoices inv on inv.order_id = o.id where o.id = ${id}`;
   if (!o) return null;
-  const [items, events, payments, shipments, refunds, notes, messages] = await Promise.all([
+  const [items, events, payments, shipments, refunds, notes, messages, returns] = await Promise.all([
     sql<{ id: string; productName: string; variantLabel: string | null; sku: string; quantity: number; unitPricePaise: number; lineTotalPaise: number }[]>`
       select id, product_name as "productName", variant_label as "variantLabel", sku, quantity, unit_price_paise as "unitPricePaise", line_total_paise as "lineTotalPaise"
       from shop.order_items where order_id = ${id} order by product_name`,
@@ -68,6 +68,10 @@ export async function getOrderDetail(id: string) {
     sql<{ channel: string; template: string; status: string; lastError: string | null; createdAt: Date; sentAt: Date | null }[]>`
       select channel, template, status, last_error as "lastError", created_at as "createdAt", sent_at as "sentAt"
       from shop.notification_outbox where payload->>'orderId' = ${id} order by created_at desc`,
+    sql<{ id: string; status: string; reason: string; details: string | null; note: string | null; createdAt: Date; items: { name: string; quantity: number }[] }[]>`
+      select r.id, r.status, r.reason, r.details, r.resolution_note as note, r.created_at as "createdAt",
+             coalesce((select json_agg(json_build_object('name', i.product_name, 'quantity', ri.quantity)) from shop.return_items ri join shop.order_items i on i.id = ri.order_item_id where ri.return_id = r.id), '[]') as items
+      from shop.return_requests r where r.order_id = ${id} order by r.created_at desc`,
   ]);
-  return { ...o, items, events, payments, shipments, refunds, notes, messages };
+  return { ...o, items, events, payments, shipments, refunds, notes, messages, returns };
 }

@@ -5,6 +5,8 @@ import { formatPaise, ORDER_STATUS_LABELS, ORDER_TRANSITIONS, stateName } from "
 import { ActionForm, SubmitButton } from "@/components/ActionForm";
 import { PaymentLabel, StatusBadge } from "@/components/StatusBadge";
 import { addOrderNoteAction, advanceOrderAction, cancelOrderAdminAction } from "@/lib/actions/orders";
+import { returnAction } from "@/lib/actions/returns";
+import { RETURN_REASONS, RETURN_STATUS_LABELS } from "@zentro/commerce/orders";
 import { formatDateTime } from "@/lib/format";
 import { maskEmail, maskPhone } from "@/lib/mask";
 import { getOrderDetail } from "@/lib/orders";
@@ -74,6 +76,30 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <div className="flex justify-between text-xs text-ink-muted"><dt>GST included ({stateName(o.placeOfSupply)})</dt><dd>{formatPaise(o.taxPaise)}</dd></div>
             </dl>
           </section>
+
+          {o.returns.map((r) => (
+            <section key={r.id} className="card p-5" aria-label="Return request">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-semibold">Return · {RETURN_STATUS_LABELS[r.status] ?? r.status}</h2>
+                <span className="text-xs text-ink-muted">{formatDateTime(r.createdAt)}</span>
+              </div>
+              <p className="mt-1 text-sm">{r.items.map((i) => `${i.quantity} × ${i.name}`).join(", ")}</p>
+              <p className="text-sm text-ink-muted">Reason: {RETURN_REASONS[r.reason as keyof typeof RETURN_REASONS] ?? r.reason}{r.details && ` — “${r.details}”`}</p>
+              {r.note && <p className="mt-2 rounded-lg bg-canvas p-2 text-sm">Note to customer: {r.note}</p>}
+              {(s.permissions.has("orders.update") || s.permissions.has("refunds.create")) && (
+                <ActionForm action={returnAction} className="mt-3 space-y-2">
+                  <input type="hidden" name="returnId" value={r.id} />
+                  {["requested", "approved", "pickup_scheduled", "picked_up"].includes(r.status) && <input name="note" maxLength={500} placeholder="Note for the customer (required to reject)" className="input h-10 text-sm" />}
+                  <div className="flex flex-wrap gap-2">
+                    {r.status === "requested" && s.permissions.has("orders.update") && <><SubmitButton name="op" value="approved">Approve</SubmitButton><SubmitButton name="op" value="rejected" variant="danger">Reject</SubmitButton></>}
+                    {r.status === "approved" && s.permissions.has("orders.update") && <SubmitButton name="op" value="pickup_scheduled" variant="secondary">Pickup scheduled</SubmitButton>}
+                    {["approved", "pickup_scheduled"].includes(r.status) && s.permissions.has("orders.update") && <SubmitButton name="op" value="picked_up" variant="secondary">Picked up</SubmitButton>}
+                    {["approved", "pickup_scheduled", "picked_up"].includes(r.status) && s.permissions.has("refunds.create") && <SubmitButton name="op" value="receive" confirm="Mark items received, restock them and refund the customer?">Received & refund</SubmitButton>}
+                  </div>
+                </ActionForm>
+              )}
+            </section>
+          ))}
 
           <section className="card p-5" aria-labelledby="pay-h">
             <h2 id="pay-h" className="font-semibold">Payments & refunds</h2>

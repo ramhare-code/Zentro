@@ -1,5 +1,6 @@
 import "server-only";
 import type { OrderStatus } from "@zentro/commerce";
+import { returnableItems } from "@zentro/commerce/orders";
 import { db } from "./db";
 
 export interface OrderView {
@@ -12,12 +13,14 @@ export interface OrderView {
   events: { status: string; note: string | null; createdAt: Date }[];
   shipments: { carrier: string; trackingNumber: string | null; trackingUrl: string | null; status: string; shippedAt: Date | null; deliveredAt: Date | null; events: { status: string; location: string | null; description: string | null; occurredAt: Date }[] }[];
   refunds: { amountPaise: number; status: string; createdAt: Date; processedAt: Date | null }[];
-  invoiceNumber: string | null; invoiceDate: Date | null;
+  invoiceNumber: string | null; invoiceDate: Date | null; deliveredAt: Date | null;
+  returns: { id: string; status: string; reason: string; note: string | null; createdAt: Date; items: { name: string; quantity: number }[] }[];
+  returnable: { id: string; name: string; available: number }[];
 }
 
 export async function getOrderView(orderId: string): Promise<OrderView | null> {
   const sql = db();
-  const [o] = await sql<Omit<OrderView, "items" | "events" | "shipments" | "refunds">[]>`
+  const [o] = await sql<Omit<OrderView, "items" | "events" | "shipments" | "refunds" | "returns" | "returnable">[]>`
     select o.id, o.order_number as "orderNumber", o.status, o.payment_status as "paymentStatus", o.email, o.phone,
            o.subtotal_paise as "subtotalPaise", o.discount_paise as "discountPaise", o.shipping_paise as "shippingPaise",
            o.tax_paise as "taxPaise", o.total_paise as "totalPaise", o.coupon_code as "couponCode", o.shipping_address as address,
@@ -25,10 +28,10 @@ export async function getOrderView(orderId: string): Promise<OrderView | null> {
            to_char(o.est_delivery_from, 'YYYY-MM-DD') as "estFrom", to_char(o.est_delivery_to, 'YYYY-MM-DD') as "estTo",
            o.cancel_reason as "cancelReason",
            (o.status in ('pending_payment','payment_failed') and o.reservation_expires_at > now()) as "reservationOpen",
-           inv.invoice_number as "invoiceNumber", inv.issued_at as "invoiceDate"
+           inv.invoice_number as "invoiceNumber", inv.issued_at as "invoiceDate", o.delivered_at as "deliveredAt"
     from shop.orders o left join shop.invoices inv on inv.order_id = o.id where o.id = ${orderId}`;
   if (!o) return null;
-  const [items, events, shipments, refunds] = await Promise.all([
+  const [items, events, shipments, refunds, returns, returnable] = await Promise.all([
     sql<OrderView["items"]>`
       select i.id, i.product_name as "productName", i.variant_label as "variantLabel", i.sku, i.image_url as "imageUrl", i.hsn_code as "hsnCode",
              i.quantity, i.unit_price_paise as "unitPricePaise", i.line_total_paise as "lineTotalPaise", i.discount_paise as "discountPaise",
@@ -42,6 +45,11 @@ export async function getOrderView(orderId: string): Promise<OrderView | null> {
                        from shop.shipment_events e where e.shipment_id = s.id), '[]') as events
       from shop.shipments s where s.order_id = ${orderId} order by s.created_at`,
     sql<OrderView["refunds"]>`select amount_paise as "amountPaise", status, created_at as "createdAt", processed_at as "processedAt" from shop.refunds where order_id = ${orderId} order by created_at`,
+    sql<OrderView["returns"]>`
+      select r.id, r.status, r.reason, r.resolution_note as note, r.created_at as "createdAt",
+             coalesce((select json_agg(json_build_object('name', i.product_name, 'quantity', ri.quantity)) from shop.return_items ri join shop.order_items i on i.id = ri.order_item_id where ri.return_id = r.id), '[]') as items
+      from shop.return_requests r where r.order_id = ${orderId} order by r.created_at desc`,
+    returnableItems(sql, orderId).then((rows) => rows.filter((r) => r.available > 0).map((r) => ({ id: r.id, name: r.productName + (r.variantLabel ? ` · ${r.variantLabel}` : ""), available: r.available }))),
   ]);
-  return { ...o, items, events, shipments, refunds };
+  return { ...o, items, events, shipments, refunds, returns, returnable };
 }
