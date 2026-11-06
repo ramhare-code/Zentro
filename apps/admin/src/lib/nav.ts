@@ -12,7 +12,7 @@ export interface NavItem {
 export const NAV: { section: string; items: NavItem[] }[] = [
   { section: "Overview", items: [
     { href: "/dashboard", label: "Dashboard", permission: "dashboard.view", phase: 1, icon: "home" },
-    { href: "/analytics", label: "Analytics", permission: "analytics.read", phase: 6, icon: "chart" },
+    { href: "/analytics", label: "Visitors & analytics", permission: "analytics.read", phase: 1, icon: "chart" },
     { href: "/notifications", label: "Alerts", permission: "notifications.read", phase: 1, icon: "bell" },
   ] },
   { section: "Catalogue", items: [

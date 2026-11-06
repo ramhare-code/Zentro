@@ -3,6 +3,8 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
+import { ConsentBanner, PageViewTracker } from "@/components/analytics/Analytics";
+import { Suspense } from "react";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -39,6 +41,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         <SiteFooter />
         <MobileTabBar />
+        <Suspense fallback={null}><PageViewTracker /></Suspense>
+        <ConsentBanner />
       </body>
     </html>
   );

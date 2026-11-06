@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { ProductRail } from "@/components/catalog/ProductRail";
 import { RatingBadge } from "@/components/catalog/RatingBadge";
 import { JsonLd } from "@/components/JsonLd";
+import { TrackProductView } from "@/components/analytics/Analytics";
 import { ProductInteractive } from "@/components/product/ProductInteractive";
 import { ReviewsSection } from "@/components/product/ReviewsSection";
 import { getProductBySlug, getPublishedReviews, getRelatedProducts } from "@/lib/catalog";
@@ -70,6 +71,7 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <div className="container-page py-6 sm:py-8">
+      <TrackProductView productId={product.id} />
       <JsonLd data={productLd} />
       <JsonLd
         data={{

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { businessInfo } from "@/lib/env";
 import { Logo } from "./Logo";
+import { CookieSettingsButton } from "../analytics/Analytics";
 
 const columns = [
   { title: "Shop", links: [{ href: "/categories", label: "All categories" }, { href: "/search?sort=newest", label: "New arrivals" }, { href: "/search?sort=popularity", label: "Best sellers" }] },
@@ -37,7 +38,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-line">
         <div className="container-page flex flex-col gap-1 py-5 text-xs text-ink-muted sm:flex-row sm:justify-between">
-          <p>© {new Date().getFullYear()} {biz.legalName ?? biz.name}. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {biz.legalName ?? biz.name}. All rights reserved. · <CookieSettingsButton /></p>
           {(biz.gstin || biz.address) && (
             <p>
               {biz.address}
