@@ -59,16 +59,18 @@ npx next build && npm run test:e2e   # fresh DB → owner bootstrap → MFA logi
 
 ## Build status (120 requirements)
 
-| Phase | Scope | Status |
-|---|---|---|
-| 1 Foundation | Auth + MFA (#2, 93, 94), RBAC (#91), staff (#92), audit log (#95), dashboard (#1, 3–10), global search, alerts | **Done** |
-| 2 Catalogue | #11–30 | Next |
-| 3 Inventory | #31–40 | Planned |
-| 4 Commerce ops | #41–50, 61–66 | Planned (needs Razorpay keys for refunds) |
-| 5 Customers & marketing | #51–60, 71–80, 88–89 | Planned |
-| 5b Messaging | #101–120 | Planned — needs an SMS provider with **DLT registration** (entity ID, sender header, approved templates) and a **WhatsApp Business** account with approved templates |
-| 6 Analytics & finance | #67–70, 81–87 | Planned |
-| 7 Hardening & deploy | #96–100 (CSP nonces, backups drill, CI, monitoring) | Planned |
+| Area | Status |
+|---|---|
+| Foundation — auth + MFA, RBAC, staff, audit log, dashboard, search, alerts (#1–10, 91–95) | **Done** |
+| Visitor analytics — live visitors, page views, sessions, funnel, sources, devices (#81, 84–86 partly) | **Done** |
+| Orders — list, filters, detail, validated status flow, shipping + tracking, cancel + Razorpay refund, notes, audit (#41–45, 47–50, 65–66 partly) | **Done** |
+| Customer messaging — templates, one-to-one, campaigns, scheduling, approval, consent ledger, unsubscribe, delivery reports, costs, analytics (#101–120) | **Done** (needs provider accounts, see `docs/MESSAGING.md`) |
+| Catalogue management (#11–30) | Next |
+| Inventory, suppliers, purchase orders (#31–40) | Planned |
+| Customers directory & privacy requests (#51–60) | Planned (needs customer accounts on the storefront) |
+| Payments dashboard, reconciliation, finance reports, invoices, tax rules (#61–64, 67–70) | Planned |
+| Coupons, promotions, banners, content (#71–80), support tickets, review moderation (#88–89) | Planned |
+| Hardening & deployment (#96–100) | Planned |
 
 Dashboard figures are computed from real tables. "Net revenue" = paid orders in
 the period minus refunds processed in the period; it will read ₹0 until real orders exist.

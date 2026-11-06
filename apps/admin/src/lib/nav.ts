@@ -35,7 +35,7 @@ export const NAV: { section: string; items: NavItem[] }[] = [
     { href: "/customers", label: "Customers", permission: "customers.read", phase: 5, icon: "users" },
     { href: "/support", label: "Support", permission: "support.manage", phase: 5, icon: "headset" },
     { href: "/reviews", label: "Reviews", permission: "reviews.moderate", phase: 5, icon: "star" },
-    { href: "/messages", label: "Messaging", permission: "messages.read", phase: 5, icon: "message" },
+    { href: "/messages", label: "Messaging", permission: "messages.read", phase: 1, icon: "message" },
   ] },
   { section: "Marketing", items: [
     { href: "/coupons", label: "Coupons", permission: "marketing.manage", phase: 5, icon: "ticket" },

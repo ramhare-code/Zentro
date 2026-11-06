@@ -26,7 +26,7 @@ export default defineConfig({
       env: {
         DATABASE_URL: E2E_DB, APP_ENV: "development", NEXT_PUBLIC_SITE_URL: `http://localhost:${port}`, SELLER_STATE_CODE: "KA",
         RAZORPAY_KEY_ID: "rzp_test_mock", RAZORPAY_KEY_SECRET: "mock_secret", RAZORPAY_WEBHOOK_SECRET: WEBHOOK_SECRET,
-        RAZORPAY_API_BASE: "http://localhost:3999", CRON_SECRET,
+        RAZORPAY_API_BASE: "http://localhost:3999", CRON_SECRET, UNSUBSCRIBE_SECRET: "e2e-unsub-secret",
       },
     },
   ],

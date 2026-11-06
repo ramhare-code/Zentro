@@ -1,15 +1,16 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { createContext, useActionState, useContext, useState, useTransition } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 
 type Result = { ok?: boolean; error?: string; needsReauth?: boolean; message?: string; secret?: string } | undefined;
 
+const PendingContext = createContext(false);
+
 export function SubmitButton({ children, variant = "primary", className, confirm, name, value }: { children: React.ReactNode; variant?: "primary" | "secondary" | "danger"; className?: string; confirm?: string; name?: string; value?: string }) {
-  const { pending } = useFormStatus();
+  const pending = useContext(PendingContext);
   return (
     <button
       type="submit"
@@ -51,11 +52,24 @@ export function ResultMessage({ state }: { state: Result }) {
   );
 }
 
+/**
+ * Server-action form that keeps what the user typed when the server rejects
+ * it (React's default form action resets every field after submission).
+ */
 export function ActionForm({ action, children, className }: { action: (prev: Result, form: FormData) => Promise<Result>; children: React.ReactNode; className?: string }) {
-  const [state, formAction] = useActionState(action, undefined);
+  const [state, dispatch, actionPending] = useActionState(action, undefined);
+  const [transitionPending, start] = useTransition();
   return (
-    <form action={formAction} className={className}>
-      {children}
+    <form
+      className={className}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+        const data = new FormData(e.currentTarget, submitter);
+        start(() => dispatch(data));
+      }}
+    >
+      <PendingContext.Provider value={actionPending || transitionPending}>{children}</PendingContext.Provider>
       <ResultMessage state={state} />
     </form>
   );
