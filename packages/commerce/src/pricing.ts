@@ -38,17 +38,20 @@ export function couponDiscount(subtotalPaise: number, c: Coupon): number {
  * (largest-remainder, so shares always sum exactly), then splits each
  * GST-inclusive line into taxable value + CGST/SGST (intra-state) or IGST.
  */
-export function priceLines(lines: PricedLine[], discountPaise: number, intraState: boolean): LineTotals[] {
+export function priceLines(lines: PricedLine[], discountPaise: number, intraState: boolean, eligible?: boolean[]): LineTotals[] {
   const gross = lines.map((l) => l.unitPricePaise * l.quantity);
-  const subtotal = gross.reduce((a, b) => a + b, 0);
-  const exact = gross.map((g) => (subtotal ? (g * discountPaise) / subtotal : 0));
+  // the discount is shared only by the lines the coupon applies to
+  const base = gross.map((g, i) => (eligible && !eligible[i] ? 0 : g));
+  const subtotal = base.reduce((a, b) => a + b, 0);
+  if (discountPaise > subtotal) throw new Error("discount exceeds the eligible subtotal");
+  const exact = base.map((g) => (subtotal ? (g * discountPaise) / subtotal : 0));
   const shares = exact.map(Math.floor);
   let remainder = discountPaise - shares.reduce((a, b) => a + b, 0);
   exact
     .map((e, i) => ({ i, frac: e - Math.floor(e) }))
     .sort((a, b) => b.frac - a.frac)
     .forEach(({ i }) => {
-      if (remainder > 0) {
+      if (remainder > 0 && base[i]! > 0) {
         shares[i]! += 1;
         remainder -= 1;
       }

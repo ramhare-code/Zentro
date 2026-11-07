@@ -42,6 +42,7 @@ export default async function CartPage() {
               <div className="min-w-0 flex-1">
                 <Link href={`/p/${l.productSlug}`} className="font-semibold hover:text-brand-700">{l.productName}</Link>
                 {l.variantLabel && <p className="text-sm text-ink-muted">{l.variantLabel}</p>}
+                {l.promotionBadge && <p className="mt-1 text-xs font-bold text-danger-700">{l.promotionBadge}</p>}
                 <p className="mt-1 font-bold">{formatPaise(l.pricePaise)}
                   {discountPercent(l.mrpPaise, l.pricePaise) > 0 && <span className="ml-2 text-sm font-normal text-ink-subtle line-through">{formatPaise(l.mrpPaise)}</span>}
                 </p>

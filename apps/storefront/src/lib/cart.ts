@@ -17,6 +17,7 @@ export interface CartLine {
   sku: string;
   imageUrl: string | null;
   pricePaise: number;
+  promotionBadge: string | null;
   mrpPaise: number;
   stock: number;
   available: boolean;
@@ -66,10 +67,11 @@ export async function getCartLines(cartId: string | null): Promise<CartLine[]> {
            nullif(array_to_string(array(select value from jsonb_each_text(v.options)), ' / '), '') as "variantLabel",
            v.sku, coalesce((select url from shop.product_media m where m.id = v.media_id),
                            (select url from shop.product_media m where m.product_id = p.id and m.kind = 'image' order by sort_order limit 1)) as "imageUrl",
-           v.price_paise as "pricePaise", v.mrp_paise as "mrpPaise", v.stock, (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available
+           vp.price_paise as "pricePaise", vp.promotion_badge as "promotionBadge", v.mrp_paise as "mrpPaise", v.stock, (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available
     from shop.cart_items i
     join shop.product_variants v on v.id = i.variant_id
     join shop.products p on p.id = v.product_id
+    join shop.variant_prices vp on vp.variant_id = v.id
     where i.cart_id = ${cartId}
     order by i.added_at`;
 }
@@ -79,8 +81,8 @@ export async function linesForVariant(variantId: string, quantity: number): Prom
     select v.id as "variantId", ${quantity}::int as quantity, p.name as "productName", p.slug as "productSlug",
            nullif(array_to_string(array(select value from jsonb_each_text(v.options)), ' / '), '') as "variantLabel",
            v.sku, (select url from shop.product_media m where m.product_id = p.id and m.kind = 'image' order by sort_order limit 1) as "imageUrl",
-           v.price_paise as "pricePaise", v.mrp_paise as "mrpPaise", v.stock, (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available
-    from shop.product_variants v join shop.products p on p.id = v.product_id where v.id = ${variantId}`;
+           vp.price_paise as "pricePaise", vp.promotion_badge as "promotionBadge", v.mrp_paise as "mrpPaise", v.stock, (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available
+    from shop.product_variants v join shop.products p on p.id = v.product_id join shop.variant_prices vp on vp.variant_id = v.id where v.id = ${variantId}`;
   return rows;
 }
 

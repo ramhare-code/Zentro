@@ -5,6 +5,7 @@ import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 import { getCartId, getCartLines, linesForVariant } from "@/lib/cart";
 import { getCustomer } from "@/lib/customer";
 import { db } from "@/lib/db";
+import { publicOffers } from "@/lib/offers";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     <div className="container-page py-8">
       <h1 className="font-display text-3xl font-bold tracking-tight">Checkout</h1>
       <p className="mt-1 text-sm text-ink-muted">{buyId ? "Buying now: " + lines[0]!.productName : `${lines.reduce((a, l) => a + l.quantity, 0)} item(s) from your cart`}</p>
-      <div className="mt-6"><CheckoutForm buy={buyId ? { variantId: buyId, quantity: qty } : undefined} initialQuote={null} prefill={prefill} signedIn={!!customer} /></div>
+      <div className="mt-6"><CheckoutForm buy={buyId ? { variantId: buyId, quantity: qty } : undefined} initialQuote={null} prefill={prefill} signedIn={!!customer} offers={await publicOffers()} /></div>
     </div>
   );
 }

@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
 import { ListingView } from "@/components/listing/ListingView";
-import { getCategories, getCategoryBySlug, listProducts } from "@/lib/catalog";
+import { getCategories, getCategoryBanners, getCategoryBySlug, listProducts } from "@/lib/catalog";
+import { CategoryBanner } from "@/components/home/CategoryBanner";
 import { listingQueryString, parseListingParams } from "@/lib/listing-params";
 import { siteUrl } from "@/lib/site";
 
@@ -30,7 +31,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const found = await getCategoryBySlug(slug);
   if (!found) notFound();
   const filters = parseListingParams(await searchParams, { category: slug });
-  const [result, all] = await Promise.all([listProducts(filters), getCategories()]);
+  const [result, all, banners] = await Promise.all([listProducts(filters), getCategories(), getCategoryBanners(found.category.id)]);
   const { category, trail, children } = found;
 
   return (
@@ -47,6 +48,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       <Breadcrumbs items={[{ name: "Home", href: "/" }, ...trail.map((c, i) => ({ name: c.name, href: i < trail.length - 1 ? `/c/${c.slug}` : undefined }))]} />
       <h1 className="mt-3 font-display text-3xl font-bold tracking-tight">{category.name}</h1>
       {category.description && <p className="mt-1 text-ink-muted">{category.description}</p>}
+      {banners[0] && <CategoryBanner banner={banners[0]} />}
       {children.length > 0 && (
         <ul className="mt-5 flex gap-2 overflow-x-auto pb-1 scrollbar-none" aria-label="Subcategories">
           {children.map((c) => (

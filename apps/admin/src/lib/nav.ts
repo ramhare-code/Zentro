@@ -38,9 +38,9 @@ export const NAV: { section: string; items: NavItem[] }[] = [
     { href: "/messages", label: "Messaging", permission: "messages.read", phase: 1, icon: "message" },
   ] },
   { section: "Marketing", items: [
-    { href: "/coupons", label: "Coupons", permission: "marketing.manage", phase: 5, icon: "ticket" },
-    { href: "/promotions", label: "Promotions", permission: "marketing.manage", phase: 5, icon: "spark" },
-    { href: "/banners", label: "Banners", permission: "marketing.manage", phase: 5, icon: "image" },
+    { href: "/coupons", label: "Coupons", permission: "marketing.manage", phase: 1, icon: "ticket" },
+    { href: "/promotions", label: "Promotions", permission: "marketing.manage", phase: 1, icon: "spark" },
+    { href: "/banners", label: "Banners", permission: "marketing.manage", phase: 1, icon: "image" },
   ] },
   { section: "Administration", items: [
     { href: "/staff", label: "Staff", permission: "staff.manage", phase: 1, icon: "badge" },

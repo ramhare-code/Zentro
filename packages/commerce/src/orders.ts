@@ -33,7 +33,7 @@ export interface PlaceOrderInput {
 export interface Quote {
   lines: {
     variantId: string; productId: string; productName: string; variantLabel: string | null; sku: string;
-    imageUrl: string | null; hsnCode: string | null; quantity: number; unitPricePaise: number; unitMrpPaise: number;
+    imageUrl: string | null; hsnCode: string | null; quantity: number; unitPricePaise: number; unitMrpPaise: number; basePricePaise: number; promotionId: string | null;
     discountPaise: number; lineTotalPaise: number; gstRate: number; taxablePaise: number;
     cgstPaise: number; sgstPaise: number; igstPaise: number;
   }[];
@@ -69,14 +69,17 @@ export async function quote(
 
   const rows = await tx<{
     variantId: string; productId: string; productName: string; options: Record<string, string>; sku: string;
-    pricePaise: number; mrpPaise: number; stock: number; available: boolean; gstRate: string; hsnCode: string | null; imageUrl: string | null;
+    pricePaise: number; basePricePaise: number; promotionId: string | null; categoryId: string; categoryPath: string[];
+    mrpPaise: number; stock: number; available: boolean; gstRate: string; hsnCode: string | null; imageUrl: string | null;
   }[]>`
     select v.id as "variantId", p.id as "productId", p.name as "productName", v.options, v.sku,
-           v.price_paise as "pricePaise", v.mrp_paise as "mrpPaise", v.stock,
+           vp.price_paise as "pricePaise", vp.base_price_paise as "basePricePaise", vp.promotion_id as "promotionId",
+           p.category_id as "categoryId", shop.category_path(p.category_id)::text[] as "categoryPath",
+           v.mrp_paise as "mrpPaise", v.stock,
            (v.is_active and shop.product_live(p.is_active, p.publish_at, p.archived_at)) as available, p.gst_rate::text as "gstRate", p.hsn_code as "hsnCode",
            coalesce((select url from shop.product_media m where m.id = v.media_id),
                     (select url from shop.product_media m where m.product_id = p.id and m.kind = 'image' order by sort_order limit 1)) as "imageUrl"
-    from shop.product_variants v join shop.products p on p.id = v.product_id
+    from shop.product_variants v join shop.products p on p.id = v.product_id join shop.variant_prices vp on vp.variant_id = v.id
     where v.id = any(${ids}::uuid[])
     order by v.id
     ${lock ? tx`for update of v` : tx``}`;
@@ -97,35 +100,49 @@ export async function quote(
   let couponId: string | null = null;
   let couponCode: string | null = null;
   let couponMessage: string | null = null;
+  let eligible: boolean[] | undefined;
   const code = input.couponCode?.trim().toUpperCase();
   if (code) {
     const [c] = await tx<{
       id: string; code: string; discountType: "percent" | "fixed"; discountValue: number; maxDiscountPaise: number | null;
       minOrderPaise: number; usageLimit: number | null; usedCount: number; perUserLimit: number | null; firstOrderOnly: boolean; live: boolean;
+      appliesTo: "all" | "categories" | "products"; categoryIds: string[]; productIds: string[]; combinable: boolean; pending: number;
     }[]>`
       select id, code, discount_type as "discountType", discount_value as "discountValue", max_discount_paise as "maxDiscountPaise",
              min_order_paise as "minOrderPaise", usage_limit as "usageLimit", used_count as "usedCount",
              per_user_limit as "perUserLimit", first_order_only as "firstOrderOnly",
-             (is_active and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at > now())) as live
-      from shop.coupons where code = ${code}`;
+             applies_to as "appliesTo", category_ids::text[] as "categoryIds", product_ids::text[] as "productIds", combinable,
+             -- unpaid checkouts still holding stock also hold a use, so a limited coupon can't be over-redeemed
+             (select count(*)::int from shop.orders o where o.coupon_id = coupons.id and o.status in ('pending_payment','payment_failed') and o.reservation_expires_at > now()) as pending,
+             (is_active and archived_at is null and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at > now())) as live
+      from shop.coupons where code = ${code}
+      ${lock ? tx`for update` : tx``}`;
     const paidBefore = c
       ? await tx<{ total: number; withCoupon: number }[]>`
           select count(*)::int as total, count(*) filter (where coupon_id = ${c.id})::int as "withCoupon"
-          from shop.orders where payment_status in ('paid','partially_refunded','refunded','refund_pending')
+          from shop.orders where payment_status in ('paid','partially_refunded','refunded','refund_pending') and status <> 'cancelled'
             and (lower(email) = ${input.email.toLowerCase()} or (${input.userId ?? null}::uuid is not null and user_id = ${input.userId ?? null}))`
       : [];
     const used = paidBefore[0];
+    const inScope = rows.map((r) => !!c && (
+      c.appliesTo === "all" || (c.appliesTo === "products" && c.productIds.includes(r.productId))
+      || (c.appliesTo === "categories" && r.categoryPath.some((id) => c.categoryIds.includes(id)))));
+    eligible = rows.map((r, i) => inScope[i]! && (c!.combinable || r.promotionId === null));
+    const eligibleSubtotal = rows.reduce((a, r, i) => a + (eligible![i] ? r.pricePaise * qty.get(r.variantId)! : 0), 0);
     if (!c || !c.live) couponMessage = "This coupon code isn’t valid.";
-    else if (c.usageLimit !== null && c.usedCount >= c.usageLimit) couponMessage = "This coupon has been fully redeemed.";
+    else if (c.usageLimit !== null && c.usedCount + c.pending >= c.usageLimit) couponMessage = "This coupon has been fully redeemed.";
     else if (c.perUserLimit !== null && used && used.withCoupon >= c.perUserLimit) couponMessage = "You’ve already used this coupon.";
     else if (c.firstOrderOnly && used && used.total > 0) couponMessage = "This coupon is for first orders only.";
-    else if (subtotal < c.minOrderPaise) couponMessage = `Add items worth ₹${Math.ceil((c.minOrderPaise - subtotal) / 100)} more to use this coupon.`;
+    else if (!inScope.some(Boolean)) couponMessage = "This coupon doesn’t apply to the items in your cart.";
+    else if (eligibleSubtotal === 0) couponMessage = "This coupon can’t be combined with items already on sale.";
+    else if (eligibleSubtotal < c.minOrderPaise) couponMessage = `Add eligible items worth ₹${Math.ceil((c.minOrderPaise - eligibleSubtotal) / 100)} more to use this coupon.`;
     else {
-      discount = couponDiscount(subtotal, c);
+      discount = couponDiscount(eligibleSubtotal, c);
       couponId = c.id;
       couponCode = c.code;
       couponMessage = `${c.code} applied.`;
     }
+    if (!couponId) eligible = undefined;
   }
 
   const [blocked] = await tx`select 1 from shop.unserviceable_pincodes where pincode = ${input.pincode}`;
@@ -146,6 +163,7 @@ export async function quote(
     rows.map((r) => ({ variantId: r.variantId, quantity: qty.get(r.variantId)!, unitPricePaise: r.pricePaise, gstRate: Number(r.gstRate) })),
     discount,
     intra,
+    eligible,
   );
   const lines = priced.map((p, i) => {
     const r = rows[i]!;
@@ -153,6 +171,7 @@ export async function quote(
     return {
       variantId: r.variantId, productId: r.productId, productName: r.productName, variantLabel: label || null, sku: r.sku,
       imageUrl: r.imageUrl, hsnCode: r.hsnCode, quantity: p.quantity, unitPricePaise: r.pricePaise, unitMrpPaise: r.mrpPaise,
+      basePricePaise: r.basePricePaise, promotionId: r.promotionId,
       discountPaise: p.discountPaise, lineTotalPaise: p.lineTotalPaise, gstRate: p.gstRate, taxablePaise: p.taxablePaise,
       cgstPaise: p.cgstPaise, sgstPaise: p.sgstPaise, igstPaise: p.igstPaise,
     };
@@ -207,10 +226,10 @@ export async function placeOrder(sql: Sql, input: PlaceOrderInput): Promise<Plac
     for (const l of q.lines) {
       await tx`
         insert into shop.order_items (order_id, product_id, variant_id, product_name, variant_label, sku, image_url, hsn_code,
-          quantity, unit_price_paise, unit_mrp_paise, discount_paise, line_total_paise, gst_rate, taxable_paise, cgst_paise, sgst_paise, igst_paise, unit_cost_paise)
+          quantity, unit_price_paise, unit_mrp_paise, discount_paise, line_total_paise, gst_rate, taxable_paise, cgst_paise, sgst_paise, igst_paise, unit_cost_paise, base_price_paise, promotion_id)
         values (${orderId}, ${l.productId}, ${l.variantId}, ${l.productName}, ${l.variantLabel}, ${l.sku}, ${l.imageUrl}, ${l.hsnCode},
           ${l.quantity}, ${l.unitPricePaise}, ${l.unitMrpPaise}, ${l.discountPaise}, ${l.lineTotalPaise}, ${l.gstRate}, ${l.taxablePaise},
-          ${l.cgstPaise}, ${l.sgstPaise}, ${l.igstPaise}, (select cost_paise from shop.product_variants where id = ${l.variantId}))`;
+          ${l.cgstPaise}, ${l.sgstPaise}, ${l.igstPaise}, (select cost_paise from shop.product_variants where id = ${l.variantId}), ${l.basePricePaise}, ${l.promotionId})`;
       // rows are locked by quote(); this cannot oversell (CHECK stock >= 0 is the last line of defence)
       await tx`update shop.product_variants set stock = stock - ${l.quantity} where id = ${l.variantId}`;
       await tx`insert into shop.inventory_reservations (order_id, variant_id, quantity, expires_at)
@@ -346,6 +365,8 @@ export async function cancelOrder(
     await tx`update shop.inventory_reservations set released_at = now() where order_id = ${orderId} and released_at is null`;
     if (o.paymentStatus === "paid") {
       await tx`update shop.products p set units_sold = greatest(0, p.units_sold - i.quantity) from shop.order_items i where i.order_id = ${orderId} and i.product_id = p.id`;
+      // a cancelled order gives its coupon use back
+      await tx`update shop.coupons c set used_count = greatest(0, c.used_count - 1) from shop.orders o where o.id = ${orderId} and o.coupon_id = c.id`;
     }
     await tx`update shop.orders set status = 'cancelled', cancelled_at = now(), cancel_reason = ${opts.reason.slice(0, 300)},
              payment_status = case when payment_status = 'paid' then 'refund_pending' when payment_status = 'pending' then 'failed' else payment_status end

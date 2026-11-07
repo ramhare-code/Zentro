@@ -125,6 +125,13 @@ export function allowedRemoteImage(url: string): boolean {
   }
 }
 
+/** Asks the storefront to refresh every cached page (e.g. prices changed by a promotion). Best effort. */
+export async function revalidateWholeStorefront() {
+  const base = process.env.STOREFRONT_URL, secret = process.env.REVALIDATE_SECRET;
+  if (!base || !secret) return;
+  await fetch(`${base.replace(/\/$/, "")}/api/revalidate?all=1`, { method: "POST", headers: { authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(5000) }).catch(() => {});
+}
+
 /** Asks the storefront to refresh cached pages after catalogue changes. Best effort. */
 export async function revalidateStorefront(paths: string[]) {
   const base = process.env.STOREFRONT_URL, secret = process.env.REVALIDATE_SECRET;

@@ -32,6 +32,9 @@ export function ProductCard({ product, priority = false, className }: { product:
         {off > 0 && !soldOut && (
           <span className="absolute left-3 top-3 rounded-full bg-accent-400 px-2.5 py-1 text-xs font-bold text-ink">{off}% off</span>
         )}
+        {product.promotionBadge && !soldOut && (
+          <span className="absolute right-3 top-3 max-w-[60%] truncate rounded-full bg-danger-600 px-2.5 py-1 text-xs font-bold text-white">{product.promotionBadge}</span>
+        )}
         {soldOut && (
           <span className="absolute left-3 top-3 rounded-full bg-ink/85 px-2.5 py-1 text-xs font-bold text-white">Sold out</span>
         )}

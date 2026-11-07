@@ -72,6 +72,12 @@ export function ProductInteractive({ productId, productName, media, variants, op
         <div className="mt-5 rounded-card bg-white p-5 ring-1 ring-line">
           {variant ? (
             <>
+              {variant.promotionBadge && (
+                <p className="mb-2 inline-flex flex-wrap items-center gap-2 rounded-full bg-danger-50 px-3 py-1 text-xs font-bold text-danger-700">
+                  {variant.promotionBadge}
+                  {variant.promotionEndsAt && <span className="font-medium">· ends {new Date(variant.promotionEndsAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" })}</span>}
+                </p>
+              )}
               <Price pricePaise={variant.pricePaise} mrpPaise={variant.mrpPaise} size="lg" />
               <p className="mt-1 text-xs text-ink-muted">Inclusive of all taxes</p>
               <StockBadge stock={variant.stock} className="mt-3" />

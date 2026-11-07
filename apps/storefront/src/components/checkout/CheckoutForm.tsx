@@ -14,7 +14,9 @@ const field = "mt-1.5 h-11 w-full rounded-xl border border-line-strong bg-white 
 export interface CheckoutPrefill { email: string; fullName: string; phone: string; line1: string; line2: string; landmark: string; city: string; stateCode: string; pincode: string }
 const EMPTY: CheckoutPrefill = { email: "", fullName: "", phone: "", line1: "", line2: "", landmark: "", city: "", stateCode: "", pincode: "" };
 
-export function CheckoutForm({ buy, initialQuote, prefill, signedIn }: { buy: Buy; initialQuote: null; prefill?: Partial<CheckoutPrefill>; signedIn?: boolean }) {
+export interface Offer { code: string; description: string }
+
+export function CheckoutForm({ buy, initialQuote, prefill, signedIn, offers = [] }: { buy: Buy; initialQuote: null; prefill?: Partial<CheckoutPrefill>; signedIn?: boolean; offers?: Offer[] }) {
   const [form, setForm] = useState<CheckoutPrefill>({ ...EMPTY, ...prefill });
   const [coupon, setCoupon] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | undefined>();
@@ -144,6 +146,18 @@ export function CheckoutForm({ buy, initialQuote, prefill, signedIn }: { buy: Bu
             <button type="button" onClick={() => { setAppliedCoupon(coupon.trim() || undefined); if (placed) { setPlaced(null); keyRef.current = crypto.randomUUID(); } }} className="h-10 rounded-xl bg-white px-4 text-sm font-semibold ring-1 ring-line-strong hover:bg-canvas">Apply</button>
           </div>
           {appliedCoupon && q?.couponMessage && <p className={`mt-1 text-sm ${q.couponId ? "text-success-700" : "text-danger-700"}`}>{q.couponMessage}</p>}
+          {offers.length > 0 && (
+            <ul aria-label="Available offers" className="mt-3 space-y-2">
+              {offers.map((o) => (
+                <li key={o.code} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-brand-300 bg-brand-50/60 px-3 py-2 text-sm">
+                  <span><span className="font-mono font-bold text-brand-800">{o.code}</span><span className="block text-xs text-ink-muted">{o.description}</span></span>
+                  {appliedCoupon === o.code ? <span className="text-xs font-semibold text-success-700">Applied</span> : (
+                    <button type="button" aria-label={`Apply ${o.code}`} onClick={() => { setCoupon(o.code); setAppliedCoupon(o.code); if (placed) { setPlaced(null); keyRef.current = crypto.randomUUID(); } }} className="shrink-0 text-sm font-semibold text-brand-700 hover:underline">Apply</button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         {error && !error.field && <p role="alert" className="rounded-xl bg-danger-50 p-3 text-sm text-danger-700">{error.text}</p>}
         {error?.field && <p role="alert" className="text-sm text-danger-700">Please fix the highlighted field.</p>}

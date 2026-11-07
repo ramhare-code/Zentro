@@ -56,3 +56,23 @@ describe("Razorpay signatures", () => {
     expect(verifyWebhookSignature("wh", body + " ", sig)).toBe(false);
   });
 });
+
+describe("coupon limited to some lines", () => {
+  const lines = [
+    { variantId: "a", quantity: 1, unitPricePaise: 100000, gstRate: 18 },
+    { variantId: "b", quantity: 2, unitPricePaise: 50000, gstRate: 5 },
+  ];
+  it("puts the whole discount on eligible lines only", () => {
+    const out = priceLines(lines, 10001, true, [false, true]);
+    expect(out[0]!.discountPaise).toBe(0);
+    expect(out[0]!.lineTotalPaise).toBe(100000);
+    expect(out[1]!.discountPaise).toBe(10001);
+    expect(out.reduce((a, l) => a + l.discountPaise, 0)).toBe(10001);
+  });
+  it("refuses a discount larger than the eligible lines", () => {
+    expect(() => priceLines(lines, 100001, true, [false, true])).toThrow();
+  });
+  it("behaves as before without an eligibility list", () => {
+    expect(priceLines(lines, 300, false).map((l) => l.discountPaise)).toEqual([150, 150]);
+  });
+});

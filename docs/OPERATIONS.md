@@ -60,6 +60,13 @@ Use those functions rather than editing order rows directly.
 - **Shipping:** shipping is currently charged without GST. If your accountant confirms it should be taxed as part of a composite supply, the pricing rules need changing before launch.
 - **Set on the admin site:** `BUSINESS_LEGAL_NAME`, `BUSINESS_GSTIN`, `SELLER_STATE_CODE` (same as the storefront).
 
+## Coupons, promotions and banners
+
+- **Promotions** change the price customers pay, everywhere, for the time window you set — no code needed. If two promotions cover an item, the lower price wins. Saving one that would sell anything below its recorded cost is refused unless you tick the confirmation.
+- **Coupons** are typed in at checkout (or tapped, if “show as an offer” is on). Untick “also applies to items already on sale” to stop a coupon stacking with a promotion.
+- **Banners**: upload wide images (about 1600 × 600) and write alt text. Links must point to pages on your store.
+- Cached storefront pages refresh when you save, and the 5-minute job refreshes them when a scheduled promotion or banner starts or ends. Checkout always uses the live price.
+
 ## Before launch — business checklist
 
 * Real catalogue, prices, HSN codes and GST rates confirmed with your accountant.

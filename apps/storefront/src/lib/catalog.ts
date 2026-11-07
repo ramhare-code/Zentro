@@ -25,6 +25,8 @@ export interface ProductSummary {
   variantCount: number;
   imageUrl: string | null;
   imageAlt: string | null;
+  /** Running promotion, e.g. "Diwali Sale" (price already reflects it). */
+  promotionBadge: string | null;
 }
 
 export interface Category {
@@ -65,9 +67,13 @@ export interface Variant {
   sku: string;
   options: Record<string, string>;
   pricePaise: number;
+  /** Price before a running promotion (equal to pricePaise when none). */
+  basePricePaise: number;
   mrpPaise: number;
   stock: number;
   mediaId: string | null;
+  promotionBadge: string | null;
+  promotionEndsAt: Date | null;
 }
 
 export interface ProductDetail {
@@ -121,7 +127,8 @@ const SUMMARY_COLUMNS = `
   pl.total_stock         as "totalStock",
   pl.variant_count       as "variantCount",
   pl.image_url           as "imageUrl",
-  pl.image_alt           as "imageAlt"`;
+  pl.image_alt           as "imageAlt",
+  pl.promotion_badge     as "promotionBadge"`;
 
 // ---------------------------------------------------------------------
 // Categories, banners, homepage
@@ -155,11 +162,24 @@ export async function getActiveBanners(): Promise<Banner[]> {
     select id, title, subtitle, cta_label as "ctaLabel", cta_href as "ctaHref",
            image_url as "imageUrl", image_mobile_url as "imageMobileUrl", theme
     from shop.banners
-    where is_active
+    where is_active and placement = 'home'
       and (starts_at is null or starts_at <= now())
       and (ends_at   is null or ends_at   >  now())
-    order by sort_order
+    order by sort_order, created_at desc
     limit 6`;
+}
+
+/** Banners for a category page: its own, or the nearest parent's. */
+export async function getCategoryBanners(categoryId: string): Promise<Banner[]> {
+  return db()<Banner[]>`
+    select b.id, b.title, b.subtitle, b.cta_label as "ctaLabel", b.cta_href as "ctaHref",
+           b.image_url as "imageUrl", b.image_mobile_url as "imageMobileUrl", b.theme
+    from shop.banners b
+    join lateral (select array_position(shop.category_path(${categoryId}), b.category_id) as depth) d on d.depth is not null
+    where b.is_active and b.placement = 'category'
+      and (b.starts_at is null or b.starts_at <= now()) and (b.ends_at is null or b.ends_at > now())
+    order by d.depth, b.sort_order, b.created_at desc
+    limit 3`;
 }
 
 export async function getHomeRails() {
@@ -353,8 +373,10 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
       select id, kind, url, poster_url as "posterUrl", alt, width, height
       from shop.product_media where product_id = ${p.id} order by sort_order, created_at`,
     sql<Variant[]>`
-      select id, sku, options, price_paise as "pricePaise", mrp_paise as "mrpPaise", stock, media_id as "mediaId"
-      from shop.product_variants where product_id = ${p.id} and is_active order by position, price_paise`,
+      select v.id, v.sku, v.options, vp.price_paise as "pricePaise", vp.base_price_paise as "basePricePaise", v.mrp_paise as "mrpPaise", v.stock,
+             v.media_id as "mediaId", vp.promotion_badge as "promotionBadge", vp.promotion_ends_at as "promotionEndsAt"
+      from shop.product_variants v join shop.variant_prices vp on vp.variant_id = v.id
+      where v.product_id = ${p.id} and v.is_active order by v.position, vp.price_paise`,
     sql<{ rating: 1 | 2 | 3 | 4 | 5; n: number }[]>`
       select rating, count(*)::int as n from shop.reviews
       where product_id = ${p.id} and status = 'published' group by rating`,
