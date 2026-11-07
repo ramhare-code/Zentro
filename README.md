@@ -47,4 +47,4 @@ Follow **docs/DEPLOYMENT.md** — database, both Vercel projects, every environm
 
 In short: apply migrations with `DATABASE_URL=<direct url> npm run db:migrate` (never the shim or dev seed), import the repo into Vercel twice (roots `apps/storefront` and `apps/admin`), set variables for Preview (test keys) and Production (live keys), and point an uptime monitor at `/api/health` on both domains.
 
-Other docs: `docs/OPERATIONS.md` (running the store day to day), `docs/ADMIN.md` (admin features and security), `docs/MESSAGING.md`, `docs/ACCESSIBILITY.md`, `docs/ARCHITECTURE.md`.
+New owner? Start with `docs/HANDOVER.md`. Other docs: `docs/OPERATIONS.md` (running the store day to day), `docs/ADMIN.md` (admin features and security), `docs/MESSAGING.md`, `docs/ACCESSIBILITY.md`, `docs/ARCHITECTURE.md`.
