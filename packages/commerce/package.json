@@ -10,7 +10,8 @@
     "./razorpay": "./src/razorpay.ts",
     "./payments": "./src/payments.ts",
     "./messaging": "./src/messaging.ts",
-    "./support": "./src/support.ts"
+    "./support": "./src/support.ts",
+    "./content": "./src/content.ts"
   },
   "dependencies": {
     "postgres": "3.4.9"

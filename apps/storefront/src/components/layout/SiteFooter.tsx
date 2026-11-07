@@ -1,16 +1,23 @@
 import Link from "next/link";
+import { getFooterPages } from "@/lib/content";
 import { businessInfo } from "@/lib/env";
 import { Logo } from "./Logo";
 import { CookieSettingsButton } from "../analytics/Analytics";
 
-const columns = [
+const COLUMNS = [
   { title: "Shop", links: [{ href: "/categories", label: "All categories" }, { href: "/search?sort=newest", label: "New arrivals" }, { href: "/search?sort=popularity", label: "Best sellers" }] },
   { title: "Help", links: [{ href: "/help", label: "Help centre" }, { href: "/account/orders", label: "Track your order" }, { href: "/contact", label: "Contact us" }] },
-  { title: "Policies", links: [{ href: "/policies/returns", label: "Returns & refunds" }, { href: "/policies/shipping", label: "Shipping" }, { href: "/policies/privacy", label: "Privacy" }, { href: "/policies/terms", label: "Terms of use" }] },
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
   const biz = businessInfo();
+  // policies and pages published from the admin
+  const pages = await getFooterPages().catch(() => []);
+  const columns = [
+    { title: COLUMNS[0]!.title, links: COLUMNS[0]!.links },
+    { title: COLUMNS[1]!.title, links: [...COLUMNS[1]!.links, ...pages.filter((p) => p.kind === "page").map((p) => ({ href: `/pages/${p.slug}`, label: p.title }))] },
+    { title: "Policies", links: pages.filter((p) => p.kind === "policy").map((p) => ({ href: `/policies/${p.slug}`, label: p.title })) },
+  ];
   return (
     <footer className="mt-12 border-t border-line bg-white pb-20 lg:pb-0">
       <div className="container-page grid gap-10 py-12 md:grid-cols-[1.4fr_repeat(3,1fr)]">

@@ -41,6 +41,7 @@ export const NAV: { section: string; items: NavItem[] }[] = [
     { href: "/coupons", label: "Coupons", permission: "marketing.manage", phase: 1, icon: "ticket" },
     { href: "/promotions", label: "Promotions", permission: "marketing.manage", phase: 1, icon: "spark" },
     { href: "/banners", label: "Banners", permission: "marketing.manage", phase: 1, icon: "image" },
+    { href: "/content", label: "Pages & FAQs", permission: "marketing.manage", phase: 1, icon: "page" },
   ] },
   { section: "Administration", items: [
     { href: "/staff", label: "Staff", permission: "staff.manage", phase: 1, icon: "badge" },

@@ -67,6 +67,12 @@ Use those functions rather than editing order rows directly.
 - **Banners**: upload wide images (about 1600 × 600) and write alt text. Links must point to pages on your store.
 - Cached storefront pages refresh when you save, and the 5-minute job refreshes them when a scheduled promotion or banner starts or ends. Checkout always uses the live price.
 
+## Pages, policies and FAQs
+
+- Edit in Admin → Pages & FAQs. Saving keeps a draft; customers see a change only after **Publish**. Every save is kept — use “Restore as draft” to bring back an older version.
+- Formatting: `## Heading`, `- bullet`, `1. step`, `**bold**`, `[text](/help)`. Placeholders such as `{email}` and `{returnDays}` are filled from configuration; unset ones show as typed and are flagged in the editor.
+- The four policies start as **draft legal text**. Have an adviser check them against how you actually work, then publish with “A legal adviser has reviewed this text” ticked.
+
 ## Before launch — business checklist
 
 * Real catalogue, prices, HSN codes and GST rates confirmed with your accountant.
