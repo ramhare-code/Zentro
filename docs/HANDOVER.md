@@ -17,7 +17,7 @@ Everything is built and tested (unit tests plus 100+ browser tests, including ac
 
 The previous owner's accounts hold these. Ask them to transfer each one to you (or add you as owner), then remove their access:
 
-1. **GitHub repository** `ramhare-code/zentro` — Settings → Transfer ownership (or add you as admin). All the code lives here; the latest work is on branch `ccr-658a074d-fu5qz1` — merge it into `main`.
+1. **GitHub repository** `ramhare-code/Zentro` — Settings → Transfer ownership (or add you as admin). All the code lives here; the latest work is on branch `ccr-658a074d-fu5qz1` — merge it into `main`.
 2. **Supabase project** `kupvbrtpikjzdbjzlmdm` — Organization settings → invite you as Owner. The store's database is already set up in it (all 16 migrations applied and verified). It's empty: no products, orders or staff yet.
    *Note:* this project also contains two unrelated tables (`public.location_updates`, `public.tracking_invites`) from another app. Zentro never touches them. If they aren't yours, either leave them or ask for Zentro to be moved to a fresh project (re-run `scripts/migrate.mjs` there).
 3. **Domain name**, if one was bought — transfer at the registrar.
