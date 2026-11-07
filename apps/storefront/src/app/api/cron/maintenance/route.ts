@@ -6,6 +6,7 @@ import { processOutbox, startDueCampaigns } from "@zentro/commerce/messaging";
 import { providerEnv } from "@/lib/messaging-env";
 import { reconcilePendingPayments } from "@zentro/commerce/payments";
 import { razorpayConfigFromEnv } from "@zentro/commerce/razorpay";
+import { shiprocketConfigFromEnv, syncTracking } from "@zentro/commerce/shipping";
 
 /** Runs every few minutes (vercel.json). Vercel sends `Authorization: Bearer $CRON_SECRET`. */
 export async function GET(req: NextRequest) {
@@ -23,7 +24,9 @@ export async function GET(req: NextRequest) {
     select (select count(*) from shop.promotions where is_active and (starts_at between now() - interval '6 minutes' and now() or ends_at between now() - interval '6 minutes' and now()))
          + (select count(*) from shop.banners where is_active and (starts_at between now() - interval '6 minutes' and now() or ends_at between now() - interval '6 minutes' and now())) as n`;
   if (Number(edge?.n) > 0) revalidatePath("/", "layout");
+  const courier = shiprocketConfigFromEnv();
+  const tracking = courier ? await syncTracking(sql, courier).catch((e) => ({ error: String(e) })) : null;
   const campaignsStarted = await startDueCampaigns(sql);
   const messages = await processOutbox(sql, providerEnv(), { limit: 200 });
-  return NextResponse.json({ payments, releasedOrders: r?.released ?? 0, campaignsStarted, messages });
+  return NextResponse.json({ payments, tracking, releasedOrders: r?.released ?? 0, campaignsStarted, messages });
 }

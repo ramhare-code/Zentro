@@ -537,7 +537,13 @@ export async function advanceOrder(
   sql: Sql,
   orderId: string,
   to: OrderStatus,
-  opts: { actor: "operations" | "carrier" | "system"; note?: string; shipment?: { carrier: string; trackingNumber?: string; trackingUrl?: string } },
+  opts: {
+    actor: "operations" | "carrier" | "system"; note?: string; shipment?: { carrier: string; trackingNumber?: string; trackingUrl?: string };
+    /** a courier booking already created the shipment row */
+    existingShipmentId?: string;
+    /** record the step without messaging the customer (e.g. a skipped intermediate courier step) */
+    silent?: boolean;
+  },
 ): Promise<void> {
   await sql.begin(async (tx) => {
     const [o] = await tx<{ status: OrderStatus; paymentStatus: string }[]>`
@@ -547,7 +553,10 @@ export async function advanceOrder(
     if (!canTransition(o.status, to)) throw new CheckoutError(`An order that is ${o.status.replace(/_/g, " ")} can’t move to ${to.replace(/_/g, " ")}.`);
     if (o.paymentStatus !== "paid" && ["processing", "packed", "shipped"].includes(to)) throw new CheckoutError("Only paid orders can be fulfilled.");
 
-    if (to === "shipped") {
+    if (to === "shipped" && opts.existingShipmentId) {
+      const r = await tx`update shop.shipments set status = 'in_transit', shipped_at = coalesce(shipped_at, now()) where id = ${opts.existingShipmentId} and order_id = ${orderId}`;
+      if (!r.count) throw new CheckoutError("Shipment not found for this order.");
+    } else if (to === "shipped") {
       const s = opts.shipment;
       if (!s?.carrier?.trim()) throw new CheckoutError("Enter the carrier to mark the order shipped.");
       if (s.trackingUrl && !/^https:\/\//.test(s.trackingUrl)) throw new CheckoutError("Tracking link must start with https://");
@@ -560,7 +569,7 @@ export async function advanceOrder(
     await tx`update shop.orders set status = ${to}, delivered_at = case when ${to} = 'delivered' then now() else delivered_at end where id = ${orderId}`;
     await tx`insert into shop.order_events (order_id, status, note, actor) values (${orderId}, ${to}, ${opts.note?.slice(0, 300) ?? null}, ${opts.actor})`;
     const template = NOTIFY_ON[to];
-    if (template) await enqueueOrderNotification(tx, orderId, template);
+    if (template && !opts.silent) await enqueueOrderNotification(tx, orderId, template);
   });
 }
 

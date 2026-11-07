@@ -25,7 +25,10 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
+        {s.permissions.has("orders.update") && s.permissions.has("customers.pii") && <Link href="/orders/labels" className="btn btn-secondary">Print labels for packed orders</Link>}
+      </div>
       <nav aria-label="Fulfilment queues" className="flex flex-wrap gap-2">
         <Link href={qs({ status: undefined, page: 1 })} className={clsx("rounded-full px-3 py-1.5 text-sm font-semibold ring-1", !f.status ? "bg-brand-600 text-white ring-brand-600" : "bg-white ring-line hover:bg-canvas")}>All</Link>
         {queue.map((st) => (

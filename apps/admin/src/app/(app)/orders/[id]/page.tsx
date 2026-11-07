@@ -4,6 +4,8 @@ import { z } from "zod";
 import { formatPaise, ORDER_STATUS_LABELS, ORDER_TRANSITIONS, stateName } from "@zentro/commerce";
 import { ActionForm, SubmitButton } from "@/components/ActionForm";
 import { PaymentLabel, StatusBadge } from "@/components/StatusBadge";
+import { shiprocketConfigFromEnv } from "@zentro/commerce/shipping";
+import { bookCourierAction, syncTrackingAction } from "@/lib/actions/courier";
 import { addOrderNoteAction, advanceOrderAction, cancelOrderAdminAction } from "@/lib/actions/orders";
 import { returnAction } from "@/lib/actions/returns";
 import { RETURN_REASONS, RETURN_STATUS_LABELS } from "@zentro/commerce/orders";
@@ -22,6 +24,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const o = id ? await getOrderDetail(id) : null;
   if (!o) notFound();
   const pii = s.permissions.has("customers.pii");
+  const courierReady = !!shiprocketConfigFromEnv();
   const forward = ORDER_TRANSITIONS[o.status].filter((t) => t !== "cancelled" && t !== "return_requested" && t !== "payment_failed" && t !== "confirmed");
   const canCancel = s.permissions.has("orders.cancel") && (ORDER_TRANSITIONS[o.status].includes("cancelled") || o.status === "pending_payment" || o.status === "payment_failed");
 
@@ -55,6 +58,40 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
                 {forward.some((t) => ["shipped", "out_for_delivery", "delivered"].includes(t)) && <p className="mt-2 text-xs text-ink-muted">Shipped, out-for-delivery and delivered updates notify the customer.</p>}
               </ActionForm>
+            </section>
+          )}
+
+          {s.permissions.has("orders.update") && o.paymentStatus === "paid" && (["processing", "packed", "shipped", "out_for_delivery"].includes(o.status) || o.shipments.length > 0) && (
+            <section className="card space-y-4 p-5" aria-labelledby="courier-h">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 id="courier-h" className="font-semibold">Courier & label</h2>
+                {pii && <Link href={`/orders/${o.id}/label`} className="btn btn-secondary h-9">Print label & packing slip</Link>}
+              </div>
+              {/* stays mounted after booking so the result stays visible */}
+              <ActionForm action={bookCourierAction} className={o.status === "packed" && courierReady ? "space-y-3" : ""}>
+                <input type="hidden" name="orderId" value={o.id} />
+                {o.status === "packed" && courierReady && !o.shipments.some((sh) => sh.provider === "shiprocket" && sh.status !== "returned_to_origin") && (
+                  <>
+                    <p className="text-sm text-ink-muted">Book a pickup with Shiprocket: it assigns a courier and AWB, marks the order shipped and tells the customer.</p>
+                    <div className="grid gap-3 sm:grid-cols-4">
+                      <label className="text-sm font-medium">Weight (kg)<input name="weightKg" inputMode="decimal" required defaultValue={o.weightGrams ? (o.weightGrams / 1000).toFixed(2) : "0.50"} className="input mt-1 h-10" /></label>
+                      <label className="text-sm font-medium">Length (cm)<input name="lengthCm" inputMode="decimal" required defaultValue="20" className="input mt-1 h-10" /></label>
+                      <label className="text-sm font-medium">Width (cm)<input name="breadthCm" inputMode="decimal" required defaultValue="15" className="input mt-1 h-10" /></label>
+                      <label className="text-sm font-medium">Height (cm)<input name="heightCm" inputMode="decimal" required defaultValue="10" className="input mt-1 h-10" /></label>
+                    </div>
+                    <SubmitButton>Book courier</SubmitButton>
+                  </>
+                )}
+              </ActionForm>
+              {o.status === "packed" && !courierReady && <p className="text-xs text-ink-muted">Courier booking needs a Shiprocket account (see docs/OPERATIONS.md). Until then, ship with any courier and enter the tracking number in Fulfilment.</p>}
+              {o.shipments.map((sh) => (
+                <div key={sh.id} className="rounded-xl bg-canvas p-4 text-sm">
+                  <p className="font-semibold">{sh.carrier}{sh.trackingNumber && <span className="font-mono"> · AWB {sh.trackingNumber}</span>} · {sh.status.replace(/_/g, " ")}</p>
+                  <p className="mt-1 flex flex-wrap gap-3 text-xs">{sh.trackingUrl && <a href={sh.trackingUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-700 underline">Tracking page</a>}{sh.labelUrl && <a href={sh.labelUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-700 underline">Courier label (PDF)</a>}{sh.lastSyncedAt && <span className="text-ink-muted">Synced {formatDateTime(sh.lastSyncedAt)}</span>}</p>
+                  {sh.events.length > 0 && <ol aria-label="Tracking history" className="mt-2 space-y-1 border-l-2 border-line pl-3 text-xs">{sh.events.slice(0, 8).map((e, i) => <li key={i}><span className="font-semibold">{e.status}</span>{e.location && ` · ${e.location}`} <span className="text-ink-muted">· {formatDateTime(e.at)}</span></li>)}</ol>}
+                  {sh.provider === "shiprocket" && courierReady && <ActionForm action={syncTrackingAction} className="mt-2"><input type="hidden" name="orderId" value={o.id} />{!sh.deliveredAt && <SubmitButton variant="secondary" className="h-8 px-3">Sync tracking now</SubmitButton>}</ActionForm>}
+                </div>
+              ))}
             </section>
           )}
 

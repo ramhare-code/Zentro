@@ -10,7 +10,7 @@ const sev = { critical: "bg-bad-700", warning: "bg-warn-700", info: "bg-info-700
 export function Topbar({ sections, alerts, name, role }: { sections: SidebarSection[]; alerts: Alert[]; name: string; role: string }) {
   const total = alerts.length;
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-white px-4 sm:px-6">
+    <header className="sticky top-0 z-20 flex h-16 print:hidden items-center gap-3 border-b border-line bg-white px-4 sm:px-6">
       <Sidebar sections={sections} />
       <form action="/search" role="search" className="max-w-xl flex-1">
         <label className="relative block">

@@ -12,7 +12,8 @@
     "./messaging": "./src/messaging.ts",
     "./support": "./src/support.ts",
     "./content": "./src/content.ts",
-    "./settings": "./src/settings.ts"
+    "./settings": "./src/settings.ts",
+    "./shipping": "./src/shipping.ts"
   },
   "dependencies": {
     "postgres": "3.4.9"

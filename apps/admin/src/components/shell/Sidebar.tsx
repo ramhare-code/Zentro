@@ -51,7 +51,7 @@ export function Sidebar({ sections }: { sections: SidebarSection[] }) {
       <button type="button" onClick={() => setOpen(true)} aria-label="Open navigation" className="grid size-10 place-items-center rounded-lg hover:bg-ink/5 lg:hidden">
         <Icon name="menu" size={20} />
       </button>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-sidebar lg:flex">{brand}{nav}</aside>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-sidebar lg:flex print:!hidden">{brand}{nav}</aside>
       {open && (
         <div className="fixed inset-0 z-50 bg-ink/50 lg:hidden" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
           <aside role="dialog" aria-modal="true" aria-label="Navigation" className="flex h-full w-72 flex-col bg-sidebar">

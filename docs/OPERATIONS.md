@@ -73,6 +73,13 @@ Use those functions rather than editing order rows directly.
 - Formatting: `## Heading`, `- bullet`, `1. step`, `**bold**`, `[text](/help)`. Placeholders such as `{email}` and `{returnDays}` are filled from configuration; unset ones show as typed and are flagged in the editor.
 - The four policies start as **draft legal text**. Have an adviser check them against how you actually work, then publish with “A legal adviser has reviewed this text” ticked.
 
+## Courier (Shiprocket) and labels
+
+- **Labels without a courier account:** Orders → *Print labels for packed orders* prints a shipping label and packing slip (no prices) per order, with a QR code. Single orders: *Print label & packing slip* on the order.
+- **Shiprocket:** set `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD` (an API user from Shiprocket → Settings → API) and `SHIPROCKET_PICKUP_LOCATION` (the exact pickup location name) on **both** apps. Packed orders then show **Book courier**: it creates the shipment, assigns an AWB, requests pickup, stores the courier label and marks the order shipped (the customer is notified).
+- **Tracking:** set `SHIPROCKET_WEBHOOK_TOKEN` on the storefront and add the webhook `https://<storefront>/api/webhooks/courier` in Shiprocket with that token (Shiprocket rejects URLs containing “shiprocket” or “sr”, hence the name). The 5-minute job also pulls tracking for undelivered shipments. Orders move to *out for delivery* and *delivered* automatically; failed deliveries and returns-to-origin raise an alert.
+- Test the integration against your Shiprocket account before launch — field names were implemented from Shiprocket’s public API docs and verified only against a local stand-in.
+
 ## Before launch — business checklist
 
 * Real catalogue, prices, HSN codes and GST rates confirmed with your accountant.

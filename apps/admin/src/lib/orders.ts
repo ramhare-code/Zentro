@@ -60,8 +60,13 @@ export async function getOrderDetail(id: string) {
       select provider_order_id as "providerOrderId", provider_payment_id as "providerPaymentId", amount_paise as "amountPaise", status, method,
              error_description as "errorDescription", verified_at as "verifiedAt", created_at as "createdAt"
       from shop.payments where order_id = ${id} order by created_at desc`,
-    sql<{ carrier: string; trackingNumber: string | null; trackingUrl: string | null; status: string; shippedAt: Date | null; deliveredAt: Date | null }[]>`
-      select carrier, tracking_number as "trackingNumber", tracking_url as "trackingUrl", status, shipped_at as "shippedAt", delivered_at as "deliveredAt" from shop.shipments where order_id = ${id}`,
+    sql<{ id: string; carrier: string; trackingNumber: string | null; trackingUrl: string | null; status: string; shippedAt: Date | null; deliveredAt: Date | null;
+      provider: string; labelUrl: string | null; lastSyncedAt: Date | null; lastStatusRaw: string | null; events: { status: string | null; location: string | null; at: string }[] }[]>`
+      select s.id, s.carrier, s.tracking_number as "trackingNumber", s.tracking_url as "trackingUrl", s.status, s.shipped_at as "shippedAt", s.delivered_at as "deliveredAt",
+             s.provider, s.label_url as "labelUrl", s.last_synced_at as "lastSyncedAt", s.last_status_raw as "lastStatusRaw",
+             coalesce((select json_agg(json_build_object('status', e.raw_status, 'location', e.location, 'at', e.occurred_at) order by e.occurred_at desc)
+                       from shop.shipment_events e where e.shipment_id = s.id), '[]') as events
+      from shop.shipments s where s.order_id = ${id} order by s.created_at`,
     sql<{ amountPaise: number; status: string; providerRefundId: string | null; createdAt: Date }[]>`
       select amount_paise as "amountPaise", status, provider_refund_id as "providerRefundId", created_at as "createdAt" from shop.refunds where order_id = ${id} order by created_at`,
     sql<{ body: string; staffEmail: string | null; createdAt: Date }[]>`select body, staff_email as "staffEmail", created_at as "createdAt" from shop.order_notes where order_id = ${id} order by created_at desc`,
@@ -73,5 +78,6 @@ export async function getOrderDetail(id: string) {
              coalesce((select json_agg(json_build_object('name', i.product_name, 'quantity', ri.quantity)) from shop.return_items ri join shop.order_items i on i.id = ri.order_item_id where ri.return_id = r.id), '[]') as items
       from shop.return_requests r where r.order_id = ${id} order by r.created_at desc`,
   ]);
-  return { ...o, items, events, payments, shipments, refunds, notes, messages, returns };
+  const [w] = await sql<{ g: number | null }[]>`select sum(coalesce(v.weight_grams, 0) * i.quantity)::int as g from shop.order_items i left join shop.product_variants v on v.id = i.variant_id where i.order_id = ${id}`;
+  return { ...o, items, events, payments, shipments, refunds, notes, messages, returns, weightGrams: w?.g || null };
 }
