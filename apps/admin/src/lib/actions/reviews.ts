@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { audit } from "../audit";
 import { db } from "../db";
+import { revalidateStorefront } from "../catalog-admin";
+import { deleteStoredImage } from "../media";
 import { authorize } from "../session";
 import { guarded, UserError, type ActionResult } from "./result";
 
@@ -28,5 +30,21 @@ export async function moderateReviewAction(_p: ActionResult, form: FormData): Pr
       void fetch(`${process.env.STOREFRONT_URL}/api/revalidate?path=/p/${r.slug}`, { method: "POST", headers: { authorization: `Bearer ${process.env.REVALIDATE_SECRET}` } }).catch(() => {});
     }
     return { ok: true, message: op === "publish" ? "Published." : "Rejected." };
+  });
+}
+
+/** Removes one photo (e.g. it shows someone's face or address) while keeping the review. */
+export async function removeReviewPhotoAction(_p: ActionResult, form: FormData): Promise<ActionResult> {
+  return guarded(async () => {
+    const s = await authorize("reviews.moderate");
+    const id = z.guid().parse(form.get("photoId"));
+    const sql = db();
+    const [m] = await sql<{ key: string | null; reviewId: string }[]>`delete from shop.review_media where id = ${id} returning storage_key as key, review_id as "reviewId"`;
+    if (!m) throw new UserError("Photo not found.");
+    await deleteStoredImage(m.key);
+    await audit(s, { action: "review.photo_remove", entityType: "review", entityId: m.reviewId });
+    const [p] = await sql<{ slug: string }[]>`select p.slug from shop.reviews r join shop.products p on p.id = r.product_id where r.id = ${m.reviewId}`;
+    if (p) await revalidateStorefront([`/p/${p.slug}`]);
+    return { ok: true, message: "Photo removed." };
   });
 }

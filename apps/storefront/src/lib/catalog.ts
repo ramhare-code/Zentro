@@ -455,15 +455,18 @@ export interface PublishedReview {
   body: string | null;
   helpfulCount: number;
   createdAt: Date;
+  photos: { url: string; width: number | null; height: number | null }[];
 }
 
 export async function getPublishedReviews(productId: string, limit = 10): Promise<PublishedReview[]> {
   return db()<PublishedReview[]>`
-    select id, display_name as "displayName", rating, title, body,
-           helpful_count as "helpfulCount", created_at as "createdAt"
-    from shop.reviews
-    where product_id = ${productId} and status = 'published'
-    order by helpful_count desc, created_at desc
+    select r.id, r.display_name as "displayName", r.rating, r.title, r.body,
+           r.helpful_count as "helpfulCount", r.created_at as "createdAt",
+           coalesce((select json_agg(json_build_object('url', m.url, 'width', m.width, 'height', m.height) order by m.sort_order)
+                     from shop.review_media m where m.review_id = r.id), '[]') as photos
+    from shop.reviews r
+    where r.product_id = ${productId} and r.status = 'published'
+    order by (exists (select 1 from shop.review_media m where m.review_id = r.id)) desc, r.helpful_count desc, r.created_at desc
     limit ${limit}`;
 }
 

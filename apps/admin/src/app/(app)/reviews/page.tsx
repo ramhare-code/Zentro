@@ -2,7 +2,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { z } from "zod";
 import { ActionForm, SubmitButton } from "@/components/ActionForm";
-import { moderateReviewAction } from "@/lib/actions/reviews";
+import { moderateReviewAction, removeReviewPhotoAction } from "@/lib/actions/reviews";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { requirePermission } from "@/lib/session";
@@ -14,9 +14,10 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
   const status = z.enum(["pending", "published", "rejected"]).safeParse((await searchParams).status).data ?? "pending";
   const sql = db();
   const [rows, counts] = await Promise.all([
-    sql<{ id: string; product: string; slug: string; rating: number; title: string | null; body: string | null; displayName: string; flags: string[]; reason: string | null; orderNumber: string; orderId: string; createdAt: Date }[]>`
+    sql<{ id: string; product: string; slug: string; rating: number; title: string | null; body: string | null; displayName: string; flags: string[]; reason: string | null; orderNumber: string; orderId: string; createdAt: Date; photos: { id: string }[] }[]>`
       select r.id, p.name as product, p.slug, r.rating, r.title, r.body, r.display_name as "displayName", r.auto_flags as flags,
-             r.moderation_reason as reason, o.order_number as "orderNumber", o.id as "orderId", r.created_at as "createdAt"
+             r.moderation_reason as reason, o.order_number as "orderNumber", o.id as "orderId", r.created_at as "createdAt",
+             coalesce((select json_agg(json_build_object('id', m.id) order by m.sort_order) from shop.review_media m where m.review_id = r.id), '[]') as photos
       from shop.reviews r join shop.products p on p.id = r.product_id join shop.order_items i on i.id = r.order_item_id join shop.orders o on o.id = i.order_id
       where r.status = ${status} order by r.created_at ${status === "pending" ? sql`asc` : sql`desc`} limit 100`,
     sql<{ status: string; n: number }[]>`select status, count(*)::int as n from shop.reviews group by status`,
@@ -48,6 +49,19 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
             {r.title && <p className="mt-3 font-medium">{r.title}</p>}
             {r.body && <p className="mt-1 whitespace-pre-line text-sm text-ink-muted">{r.body}</p>}
             {r.reason && <p className="mt-2 text-xs text-ink-muted">Rejected: {r.reason.replace(/_/g, " ")}</p>}
+            {/* stays mounted after the last photo is removed so the confirmation remains */}
+            {(
+              <ActionForm action={removeReviewPhotoAction} className={r.photos.length ? "mt-3" : ""}>
+                {r.photos.length > 0 && <ul aria-label="Review photos" className="flex flex-wrap gap-3">
+                  {r.photos.map((p, i) => (
+                    <li key={p.id} className="space-y-1">
+                      <a href={`/api/review-photo/${p.id}`} target="_blank" rel="noopener noreferrer"><img src={`/api/review-photo/${p.id}`} alt={`Photo ${i + 1} from ${r.displayName}`} className="size-28 rounded-lg object-cover ring-1 ring-line" /></a>
+                      <SubmitButton name="photoId" value={p.id} variant="secondary" className="h-8 w-28 px-2 text-xs" confirm="Remove this photo? The review stays.">Remove photo</SubmitButton>
+                    </li>
+                  ))}
+                </ul>}
+              </ActionForm>
+            )}
             <ActionForm action={moderateReviewAction} className="mt-4 flex flex-wrap items-center gap-2">
               <input type="hidden" name="reviewId" value={r.id} />
               {status !== "published" && <SubmitButton name="op" value="publish">Publish</SubmitButton>}

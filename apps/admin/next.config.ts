@@ -14,7 +14,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ["@zentro/commerce"],
-  serverExternalPackages: ["qrcode"],
+  serverExternalPackages: ["qrcode", "sharp"],
+  // product images are up to 5 MB each and several can be uploaded at once (default limit is 1 MB)
+  experimental: { serverActions: { bodySizeLimit: "25mb" } },
   images: { remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }] },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

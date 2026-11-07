@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ProductDetail, PublishedReview } from "@/lib/catalog";
 import { StarIcon } from "../icons";
 
@@ -44,6 +45,15 @@ export function ReviewsSection({ product, reviews }: { product: ProductDetail; r
                   {r.title && <h3 className="font-semibold">{r.title}</h3>}
                 </div>
                 {r.body && <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink-muted">{r.body}</p>}
+                {r.photos.length > 0 && (
+                  <ul aria-label={`Photos from ${r.displayName}`} className="mt-3 flex gap-2">
+                    {r.photos.map((p, i) => (
+                      <li key={i}><a href={p.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg ring-1 ring-line">
+                        <Image src={p.url} alt={`Customer photo ${i + 1} of ${r.photos.length} from ${r.displayName}`} width={96} height={96} className="size-24 object-cover" />
+                      </a></li>
+                    ))}
+                  </ul>
+                )}
                 <p className="mt-3 text-xs text-ink-subtle">
                   {r.displayName} · Verified buyer · {dateFmt.format(r.createdAt)}
                 </p>

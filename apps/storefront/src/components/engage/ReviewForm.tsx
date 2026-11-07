@@ -30,6 +30,10 @@ export function ReviewForm({ orderNumber, token, orderItemId, productName, defau
       <label className="block text-sm font-medium">Headline <span className="font-normal text-ink-muted">(optional)</span><input name="title" maxLength={120} className={fieldClass} /></label>
       <label className="block text-sm font-medium">Your review <span className="font-normal text-ink-muted">(optional)</span><textarea name="body" maxLength={4000} rows={4} className={`${fieldClass} h-auto py-2`} /></label>
       <label className="block text-sm font-medium">Name shown<input name="displayName" defaultValue={defaultName} required maxLength={60} className={fieldClass} /></label>
+      <label className="block text-sm font-medium">Photos <span className="font-normal text-ink-muted">(optional, up to 3)</span>
+        <input type="file" name="photos" multiple accept="image/jpeg,image/png,image/webp" onChange={(e) => { const n = e.currentTarget.files?.length ?? 0; e.currentTarget.setCustomValidity(n > 3 ? "Choose up to 3 photos." : ""); }} className="mt-1.5 block w-full text-sm" />
+        <span className="mt-1 block text-xs font-normal text-ink-muted">Location and camera details are removed from photos. Photos are checked before they appear.</span>
+      </label>
       <p className="text-xs text-ink-muted">Reviews are labelled “Verified buyer”. Links, phone numbers and abusive language are held for a quick check.</p>
       {state?.error && <p role="alert" className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">{state.error}</p>}
       <button type="submit" disabled={pendingA || pendingT} className="h-11 rounded-full bg-brand-600 px-6 font-semibold text-white disabled:opacity-60">{pendingA || pendingT ? "Please wait…" : "Submit review"}</button>

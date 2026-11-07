@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { deleteStoredImage, MediaError, storeImageBuffer } from "@zentro/commerce/media";
 import { findOrderForGuest } from "@zentro/commerce/orders";
 import { addToCartAction } from "./cart";
 import { getCustomer, rateLimited } from "../customer";
@@ -86,13 +87,32 @@ export async function submitReviewAction(_p: ReviewResult, f: FormData): Promise
     where i.id = ${orderItemId} and i.order_id = ${orderId}`;
   if (!item?.productId) return { error: "This product can’t be reviewed." };
   if (item.status !== "delivered") return { error: "You can review items once they’ve been delivered." };
+  const files = f.getAll("photos").filter((x): x is File => x instanceof File && x.size > 0);
+  if (files.length > 3) return { error: "Add up to 3 photos." };
+  // photos are re-encoded (removes location and camera data) before anything is saved
+  const stored: Awaited<ReturnType<typeof storeImageBuffer>>[] = [];
+  try {
+    for (const file of files) stored.push(await storeImageBuffer(sql, Buffer.from(await file.arrayBuffer()), { createdBy: null, purpose: "review", reencode: true, minSide: 300 }));
+  } catch (e) {
+    for (const m of stored) await deleteStoredImage(sql, m.key);
+    if (e instanceof MediaError) return { error: e.message };
+    throw e;
+  }
   const flags = await screenReview(title, body);
+  if (stored.length) flags.push("has photos");
+  // a person checks every photo before it's shown
   const status = flags.length ? "pending" : "published";
-  const inserted = await sql`
+  const [review] = await sql<{ id: string }[]>`
     insert into shop.reviews (product_id, user_id, order_item_id, display_name, rating, title, body, status, auto_flags)
     values (${item.productId}, ${item.userId}, ${orderItemId}, ${name}, ${rating}, ${title || null}, ${body || null}, ${status}, ${flags})
-    on conflict (order_item_id) do nothing`;
-  if (!inserted.count) return { error: "You’ve already reviewed this item." };
+    on conflict (order_item_id) do nothing returning id`;
+  if (!review) {
+    for (const m of stored) await deleteStoredImage(sql, m.key);
+    return { error: "You’ve already reviewed this item." };
+  }
+  for (const [i, m] of stored.entries()) {
+    await sql`insert into shop.review_media (review_id, url, storage_key, width, height, sort_order) values (${review.id}, ${m.url}, ${m.key}, ${m.width}, ${m.height}, ${i})`;
+  }
   if (item.slug) revalidatePath(`/p/${item.slug}`);
-  return { ok: true, message: status === "published" ? "Thanks! Your review is live." : "Thanks! Your review will appear after a quick check by our team." };
+  return { ok: true, message: status === "published" ? "Thanks! Your review is live." : stored.length ? "Thanks! Your review and photos will appear after a quick check by our team." : "Thanks! Your review will appear after a quick check by our team." };
 }

@@ -13,10 +13,12 @@
     "./support": "./src/support.ts",
     "./content": "./src/content.ts",
     "./settings": "./src/settings.ts",
-    "./shipping": "./src/shipping.ts"
+    "./shipping": "./src/shipping.ts",
+    "./media": "./src/media.ts"
   },
   "dependencies": {
-    "postgres": "3.4.9"
+    "postgres": "3.4.9",
+    "sharp": "0.35.5"
   },
   "scripts": {
     "test": "vitest run",

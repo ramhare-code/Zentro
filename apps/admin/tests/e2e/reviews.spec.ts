@@ -18,8 +18,8 @@ test("support moderates a flagged review; publishing recalculates the genuine ra
   await advanceOrder(sql as never, p.orderId, "shipped", { actor: "operations", shipment: { carrier: "India Post" } });
   await advanceOrder(sql as never, p.orderId, "delivered", { actor: "operations" });
   const [item] = await sql<{ id: string }[]>`select id from shop.order_items where order_id = ${p.orderId}`;
-  await sql`insert into shop.reviews (product_id, order_item_id, display_name, rating, body, status, auto_flags)
-            values (${v!.productId}, ${item!.id}, 'Farah K', 2, 'Lid leaks a little. Call me on 98765 43210 for details', 'pending', '{"contains a phone number"}')`;
+  const [rev] = await sql<{ id: string }[]>`insert into shop.reviews (product_id, order_item_id, display_name, rating, body, status, auto_flags)
+            values (${v!.productId}, ${item!.id}, 'Farah K', 2, 'Lid leaks a little. Call me on 98765 43210 for details', 'pending', '{"contains a phone number"}') returning id`;
   await sql.end();
 
   await acceptInvite(page, await createStaffInvite("mod@zentro.test", "Meena Mod", "support"));
@@ -39,7 +39,7 @@ test("support moderates a flagged review; publishing recalculates the genuine ra
 
   const s2 = db();
   const [prod] = await s2<{ n: number; avg: string }[]>`select rating_count as n, rating_avg::text as avg from shop.products where id = ${v!.productId}`;
-  const [log] = await s2<{ n: number }[]>`select count(*)::int as n from shop.audit_log where action in ('review.reject','review.publish')`;
+  const [log] = await s2<{ n: number }[]>`select count(*)::int as n from shop.audit_log where action in ('review.reject','review.publish') and entity_id = ${rev!.id}`;
   await s2.end();
   expect(prod).toEqual({ n: 1, avg: "2.00" });
   expect(log!.n).toBe(2);

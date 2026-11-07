@@ -35,7 +35,7 @@ export default async function SupportQueue({ searchParams }: { searchParams: Pro
   const tabs: [typeof view, string][] = [["active", "Needs reply"], ["mine", "Assigned to me"], ["unassigned", "Unassigned"], ["awaiting_customer", "Waiting on customer"], ["resolved", "Resolved"]];
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold tracking-tight">Support</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3"><h1 className="text-2xl font-bold tracking-tight">Support</h1><Link href="/support/feedback" className="btn btn-secondary">Site feedback</Link></div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Ticket views" className="flex flex-wrap gap-2">
           {tabs.map(([k, l]) => <Link key={k} href={`?view=${k}`} aria-current={k === view ? "page" : undefined} className={clsx("rounded-full px-3 py-1.5 text-sm font-semibold ring-1", k === view ? "bg-brand-600 text-white ring-brand-600" : "bg-white ring-line")}>{l}</Link>)}

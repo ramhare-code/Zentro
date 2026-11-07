@@ -14,6 +14,9 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@zentro/commerce"],
+  serverExternalPackages: ["sharp"],
+  // review photos: up to 3 × 5 MB (default limit is 1 MB)
+  experimental: { serverActions: { bodySizeLimit: "16mb" } },
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],

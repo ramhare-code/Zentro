@@ -104,3 +104,70 @@ test("verified reviews: clean ones publish and update the rating; flagged ones w
   expect(p).toEqual({ avg: "4.00", n: 1 });
   expect(pending!.flags).toContain("contains a link");
 });
+
+test("review photos: re-encoded without location data, hidden until a moderator approves", async ({ page, request }) => {
+  const sharp = (await import("sharp")).default;
+  // a phone photo carrying GPS coordinates in its EXIF data
+  const withGps = await sharp({ create: { width: 900, height: 700, channels: 3, background: { r: 200, g: 120, b: 40 } } })
+    .jpeg().withExif({ IFD0: { Make: "PhoneCo", Model: "X1" }, IFD3: { GPSLatitudeRef: "N", GPSLatitude: "12/1 58/1 0/1", GPSLongitudeRef: "E", GPSLongitude: "77/1 35/1 0/1" } }).toBuffer();
+  expect((await sharp(withGps).metadata()).exif).toBeTruthy();
+
+  const orderUrl = await deliveredOrder(["ZN-007-1"]);
+  await page.goto(orderUrl);
+  const bottle = page.getByRole("listitem").filter({ hasText: "Modern Insulated Bottle" });
+  await bottle.getByRole("button", { name: "Write a review" }).click();
+  await bottle.getByText("5★").click();
+  await bottle.getByLabel("Your review").fill("Keeps water cold all day, even in the car.");
+  await bottle.getByLabel(/^Photos/).setInputFiles([{ name: "fake.jpg", mimeType: "image/jpeg", buffer: Buffer.from("<?php echo 1; ?>") }]);
+  await bottle.getByRole("button", { name: "Submit review" }).click();
+  await expect(bottle.locator('p[role="alert"]')).toContainText("JPEG, PNG, WebP or AVIF");
+  await bottle.getByLabel(/^Photos/).setInputFiles([{ name: "bottle.jpg", mimeType: "image/jpeg", buffer: withGps }]);
+  await bottle.getByRole("button", { name: "Submit review" }).click();
+  await expect(bottle.getByRole("status")).toContainText("review and photos will appear after a quick check");
+
+  const s = sql();
+  const [m] = await s<{ url: string; reviewId: string; fileId: string }[]>`
+    select m.url, m.review_id as "reviewId", substr(m.storage_key, 4) as "fileId" from shop.review_media m
+    join shop.reviews r on r.id = m.review_id join shop.products p on p.id = r.product_id where p.slug = 'modern-insulated-bottle'`;
+  const [f] = await s<{ bytes: Buffer; type: string }[]>`select bytes, content_type as type from shop.media_files where id = ${m!.fileId}`;
+  expect(f!.type).toBe("image/webp");
+  const meta = await sharp(f!.bytes).metadata();
+  expect(meta.exif).toBeUndefined(); // location and camera data removed
+  expect(meta.width).toBe(900);
+  const [r] = await s<{ status: string; flags: string[] }[]>`select status, auto_flags as flags from shop.reviews where id = ${m!.reviewId}`;
+  expect(r).toEqual({ status: "pending", flags: ["has photos"] });
+  expect((await request.get(m!.url)).status()).toBe(404); // not public before approval
+
+  await s`update shop.reviews set status = 'published' where id = ${m!.reviewId}`;
+  await s.end();
+  const img = await request.get(m!.url);
+  expect(img.status()).toBe(200);
+  expect(img.headers()["content-type"]).toBe("image/webp");
+  await page.goto("/p/modern-insulated-bottle");
+  await expect(page.getByRole("list", { name: /Photos from/ }).getByRole("img")).toHaveCount(1);
+});
+
+test("site feedback is saved with the page it came from; bots are ignored", async ({ page }) => {
+  await page.goto("/feedback?from=/cart");
+  await page.getByText("Something isn’t working").click();
+  await page.getByText("2★").click();
+  await page.getByLabel("Your feedback").fill("The pincode check spun forever on my phone.");
+  await page.getByLabel(/^Email/).fill("visitor@example.com");
+  await page.getByRole("button", { name: "Send feedback" }).click();
+  await expect(page.getByRole("status")).toContainText("we’ll reply if it needs an answer");
+  const s = sql();
+  const [f] = await s<{ kind: string; rating: number; page: string; email: string }[]>`select kind, rating, page_path as page, email from shop.site_feedback order by id desc limit 1`;
+  expect(f).toEqual({ kind: "problem", rating: 2, page: "/cart", email: "visitor@example.com" });
+  const [b] = await s<{ n: number }[]>`select count(*)::int as n from shop.site_feedback`;
+  // a bot fills the hidden field: it's told "thanks" but nothing is stored
+  await page.goto("/feedback");
+  await page.getByText("An idea or suggestion").click();
+  await page.getByLabel("Your feedback").fill("Buy cheap followers at example dot com");
+  await page.locator('input[name="website"]').evaluate((el: HTMLInputElement) => { el.value = "http://spam.example"; });
+  await page.getByRole("button", { name: "Send feedback" }).click();
+  await expect(page.getByRole("status")).toContainText("Thanks");
+  const [a] = await s<{ n: number }[]>`select count(*)::int as n from shop.site_feedback`;
+  expect(a!.n).toBe(b!.n);
+  await s.end();
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "Send feedback" })).toBeVisible();
+});

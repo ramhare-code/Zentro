@@ -6,7 +6,7 @@ import { CookieSettingsButton } from "../analytics/Analytics";
 
 const COLUMNS = [
   { title: "Shop", links: [{ href: "/categories", label: "All categories" }, { href: "/search?sort=newest", label: "New arrivals" }, { href: "/search?sort=popularity", label: "Best sellers" }] },
-  { title: "Help", links: [{ href: "/help", label: "Help centre" }, { href: "/account/orders", label: "Track your order" }, { href: "/contact", label: "Contact us" }] },
+  { title: "Help", links: [{ href: "/help", label: "Help centre" }, { href: "/account/orders", label: "Track your order" }, { href: "/contact", label: "Contact us" }, { href: "/feedback", label: "Send feedback" }] },
 ];
 
 export async function SiteFooter() {
