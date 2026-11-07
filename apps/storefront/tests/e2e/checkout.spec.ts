@@ -13,7 +13,7 @@ window.Razorpay = class {
   open() {
     const mode = window.__rzpMode || "pay";
     if (mode === "dismiss") { this.o.modal.ondismiss(); return; }
-    fetch("http://localhost:3999/__pay", { method: "POST", body: JSON.stringify({ order_id: this.o.order_id, forge: mode === "forge" }) })
+    fetch("https://api.razorpay.com/__test_pay", { method: "POST", body: JSON.stringify({ order_id: this.o.order_id, forge: mode === "forge" }) })
       .then((r) => r.json()).then((r) => this.o.handler(r));
   }
 };`;
@@ -22,6 +22,11 @@ const sql = () => postgres(E2E_DB, { max: 1, onnotice: () => {} });
 
 async function prepare(page: Page, mode: "pay" | "dismiss" | "forge" = "pay") {
   await page.route("https://checkout.razorpay.com/v1/checkout.js", (r) => r.fulfill({ contentType: "application/javascript", body: STUB }));
+  // the stub calls a Razorpay-domain URL (allowed by the site's CSP); the test forwards it to the local mock
+  await page.route("https://api.razorpay.com/__test_pay", async (r) => {
+    const res = await fetch("http://localhost:3999/__pay", { method: "POST", body: r.request().postData() ?? "{}" });
+    await r.fulfill({ status: res.status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: await res.text() });
+  });
   await page.addInitScript((m) => { (window as unknown as { __rzpMode: string }).__rzpMode = m; document.cookie = "zentro_consent=essential; path=/"; }, mode);
 }
 

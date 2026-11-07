@@ -43,10 +43,8 @@ npm run build                        # both apps
 
 ## Deploy (Vercel + Supabase)
 
-1. Create the database schema: run `db/migrations/*.sql` in order (Supabase SQL editor, or
-   `DATABASE_URL=<pooler url> npm run db:migrate`). Do **not** run the shim or dev seed on production.
-2. Import the GitHub repo in Vercel twice: root `apps/storefront` (shop domain) and
-   root `apps/admin` (admin domain). Set the variables from `.env.example` separately for
-   **Preview** (staging, `APP_ENV=staging`, Razorpay test keys) and **Production**
-   (`APP_ENV=production`, live keys).
-3. Add your domain in Vercel; HTTPS certificates are issued automatically. HSTS is enabled.
+Follow **docs/DEPLOYMENT.md** — database, both Vercel projects, every environment variable, the 5-minute job, webhooks, monitoring, backups and the launch checklist.
+
+In short: apply migrations with `DATABASE_URL=<direct url> npm run db:migrate` (never the shim or dev seed), import the repo into Vercel twice (roots `apps/storefront` and `apps/admin`), set variables for Preview (test keys) and Production (live keys), and point an uptime monitor at `/api/health` on both domains.
+
+Other docs: `docs/OPERATIONS.md` (running the store day to day), `docs/ADMIN.md` (admin features and security), `docs/MESSAGING.md`, `docs/ACCESSIBILITY.md`, `docs/ARCHITECTURE.md`.

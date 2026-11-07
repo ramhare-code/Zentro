@@ -174,7 +174,7 @@ export function FiltersPanel({ children, filters, brands, priceMin, priceMax, to
               <FilterIcon size={18} /> Filters{activeCount ? ` (${activeCount})` : ""}
             </button>
             <label className="flex items-center gap-2 text-sm">
-              <span className="hidden text-ink-muted sm:inline">Sort by</span>
+              <span className="sr-only text-ink-muted sm:not-sr-only">Sort by</span>
               <select
                 value={filters.sort}
                 onChange={(e) => navigate({ sort: e.target.value as Sort })}

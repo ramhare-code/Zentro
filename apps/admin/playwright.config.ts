@@ -13,7 +13,7 @@ export const E2E_DB = process.env.E2E_DATABASE_URL ?? "postgres://zentro:zentro@
 
 export default defineConfig({
   testDir: "tests/e2e",
-  testMatch: ["orders.spec.ts", "messaging.spec.ts", "reviews.spec.ts", "returns.spec.ts", "support.spec.ts", "catalog.spec.ts", "inventory.spec.ts", "payments.spec.ts", "finance.spec.ts", "marketing.spec.ts", "content.spec.ts", "settings.spec.ts", "courier.spec.ts", "analytics.spec.ts", "feedback.spec.ts", "admin.spec.ts"],
+  testMatch: ["orders.spec.ts", "messaging.spec.ts", "reviews.spec.ts", "returns.spec.ts", "support.spec.ts", "catalog.spec.ts", "inventory.spec.ts", "payments.spec.ts", "finance.spec.ts", "marketing.spec.ts", "content.spec.ts", "settings.spec.ts", "courier.spec.ts", "analytics.spec.ts", "feedback.spec.ts", "a11y.spec.ts", "admin.spec.ts"],
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,
   workers: 1,

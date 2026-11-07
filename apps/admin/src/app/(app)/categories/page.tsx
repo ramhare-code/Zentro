@@ -50,8 +50,8 @@ export default async function CategoriesPage() {
       <ul className={depth ? "ml-6 mt-2 space-y-2 border-l border-line pl-4" : "space-y-3"}>
         {kids.map((c, i) => (
           <li key={c.id} aria-label={`Category ${c.name}`}>
-            <details className="card p-4">
-              <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3">
+            <div className="card p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="flex items-center gap-3">
                   {c.imageUrl ? <img src={mediaSrc(c.imageUrl)} alt="" className="size-10 rounded-lg object-cover" /> : <span className="size-10 rounded-lg bg-canvas" />}
                   <span><span className="font-semibold">{c.name}</span> <span className="font-mono text-xs text-ink-muted">/c/{c.slug}</span>
@@ -59,13 +59,16 @@ export default async function CategoriesPage() {
                 </span>
                 <ActionForm action={categoryOpAction} className="flex gap-1">
                   <input type="hidden" name="categoryId" value={c.id} />
-                  {i > 0 && <SubmitButton name="op" value="up" variant="secondary" className="h-8 px-2 text-xs">↑</SubmitButton>}
-                  {i < kids.length - 1 && <SubmitButton name="op" value="down" variant="secondary" className="h-8 px-2 text-xs">↓</SubmitButton>}
+                  {i > 0 && <SubmitButton name="op" value="up" variant="secondary" className="h-8 px-2 text-xs" label={`Move ${c.name} up`}>↑</SubmitButton>}
+                  {i < kids.length - 1 && <SubmitButton name="op" value="down" variant="secondary" className="h-8 px-2 text-xs" label={`Move ${c.name} down`}>↓</SubmitButton>}
                   <SubmitButton name="op" value="delete" variant="secondary" className="h-8 px-2 text-xs text-bad-700" confirm={`Delete “${c.name}”?`}>Delete</SubmitButton>
                 </ActionForm>
-              </summary>
-              <div className="mt-4 border-t border-line pt-4"><CategoryForm c={c} all={all} /></div>
-            </details>
+              </div>
+              <details className="mt-2">
+                <summary className="cursor-pointer text-sm font-semibold text-brand-700">Edit {c.name}</summary>
+                <div className="mt-4 border-t border-line pt-4"><CategoryForm c={c} all={all} /></div>
+              </details>
+            </div>
             {render(c.id, depth + 1)}
           </li>
         ))}

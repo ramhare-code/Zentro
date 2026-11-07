@@ -14,7 +14,8 @@
     "./content": "./src/content.ts",
     "./settings": "./src/settings.ts",
     "./shipping": "./src/shipping.ts",
-    "./media": "./src/media.ts"
+    "./media": "./src/media.ts",
+    "./ops": "./src/ops.ts"
   },
   "dependencies": {
     "postgres": "3.4.9",

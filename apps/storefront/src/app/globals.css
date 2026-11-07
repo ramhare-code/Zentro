@@ -26,7 +26,7 @@
 
   --color-ink: #16151c;        /* body text — 17:1 */
   --color-ink-muted: #5b5a66;  /* secondary text — 6.9:1 */
-  --color-ink-subtle: #75747f; /* tertiary text — 4.6:1 */
+  --color-ink-subtle: #696873; /* tertiary text — ≥5:1 on canvas and white */
   --color-surface: #ffffff;
   --color-canvas: #f6f6fa;
   --color-line: #e6e5ee;

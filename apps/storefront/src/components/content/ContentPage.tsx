@@ -10,7 +10,7 @@ export async function ContentPage({ page }: { page: PublishedPage }) {
       <h1 className="font-display text-3xl font-bold tracking-tight">{page.title}</h1>
       {page.summary && <p className="mt-2 text-ink-muted">{fillPlaceholders(page.summary, values)}</p>}
       <div className="mt-8 rounded-card bg-white p-6 ring-1 ring-line sm:p-8"><RichText body={page.body} values={values} /></div>
-      <p className="mt-4 text-xs text-ink-subtle">Last updated {page.publishedAt.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" })}</p>
+      <p className="mt-4 text-xs text-ink-muted">Last updated {page.publishedAt.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" })}</p>
     </article>
   );
 }

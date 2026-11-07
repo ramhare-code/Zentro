@@ -17,7 +17,7 @@ export function Sidebar({ sections }: { sections: SidebarSection[] }) {
     <nav aria-label="Admin" className="flex-1 overflow-y-auto px-3 pb-6">
       {sections.map((s) => (
         <div key={s.section} className="mt-5">
-          <p className="px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-white/40">{s.section}</p>
+          <p className="px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-white/70">{s.section}</p>
           <ul className="mt-1.5 space-y-0.5">
             {s.items.map((i) => {
               const active = pathname === i.href || pathname.startsWith(i.href + "/");

@@ -80,11 +80,12 @@ Use those functions rather than editing order rows directly.
 - **Tracking:** set `SHIPROCKET_WEBHOOK_TOKEN` on the storefront and add the webhook `https://<storefront>/api/webhooks/courier` in Shiprocket with that token (Shiprocket rejects URLs containing “shiprocket” or “sr”, hence the name). The 5-minute job also pulls tracking for undelivered shipments. Orders move to *out for delivery* and *delivered* automatically; failed deliveries and returns-to-origin raise an alert.
 - Test the integration against your Shiprocket account before launch — field names were implemented from Shiprocket’s public API docs and verified only against a local stand-in.
 
-## Before launch — business checklist
+## Before launch
 
-* Real catalogue, prices, HSN codes and GST rates confirmed with your accountant.
-* Business details in environment variables (legal name, address, GSTIN, support contacts,
-  grievance officer) — required by Indian e-commerce rules and by Razorpay.
-* Policies in `src/content/policies.ts` reviewed by a legal adviser.
+The full launch checklist (database, hosting, secrets, webhooks, monitoring, backups) is in **docs/DEPLOYMENT.md**. Business items:
+
+* Real catalogue, prices, HSN codes and GST rates confirmed with your accountant (Admin → Settings → Tax shows products missing HSN).
+* Business details in Admin → Settings (legal name, address, GSTIN, state, support contacts, grievance officer) — required by Indian e-commerce rules and by Razorpay.
+* Policies (Admin → Pages & FAQs) reviewed by a legal adviser and published with “reviewed” ticked.
 * Razorpay account activated (KYC) and live keys set only in the Production environment.
 * Do **not** load `db/seed/dev_seed.sql` into production.

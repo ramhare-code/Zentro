@@ -9,13 +9,14 @@ type Result = { ok?: boolean; error?: string; needsReauth?: boolean; message?: s
 
 const PendingContext = createContext(false);
 
-export function SubmitButton({ children, variant = "primary", className, confirm, name, value }: { children: React.ReactNode; variant?: "primary" | "secondary" | "danger"; className?: string; confirm?: string; name?: string; value?: string }) {
+export function SubmitButton({ children, variant = "primary", className, confirm, name, value, label }: { children: React.ReactNode; variant?: "primary" | "secondary" | "danger"; className?: string; confirm?: string; name?: string; value?: string; label?: string }) {
   const pending = useContext(PendingContext);
   return (
     <button
       type="submit"
       name={name}
       value={value}
+      aria-label={label}
       disabled={pending}
       onClick={(e) => { if (confirm && !window.confirm(confirm)) e.preventDefault(); }}
       className={clsx("btn", `btn-${variant}`, className)}

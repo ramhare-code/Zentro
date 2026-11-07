@@ -2,8 +2,13 @@
   "name": "zentro",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20.9" },
-  "workspaces": ["apps/*", "packages/*"],
+  "engines": {
+    "node": ">=20.9"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev:store": "npm run dev -w @zentro/storefront",
     "dev:admin": "npm run dev -w @zentro/admin",
@@ -16,5 +21,8 @@
   },
   "dependencies": {
     "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2"
   }
 }

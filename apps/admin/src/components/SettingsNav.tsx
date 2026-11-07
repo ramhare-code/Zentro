@@ -3,7 +3,7 @@ import clsx from "clsx";
 import type { StaffSession } from "@/lib/session";
 
 export function SettingsNav({ active, title, s }: { active: string; title: string; s: StaffSession }) {
-  const tabs = [["/settings", "Store details", "settings.manage"], ["/settings/shipping", "Shipping & delivery", "settings.manage"], ["/settings/tax", "Tax", "tax.manage"]] as const;
+  const tabs = [["/settings", "Store details", "settings.manage"], ["/settings/shipping", "Shipping & delivery", "settings.manage"], ["/settings/tax", "Tax", "tax.manage"], ["/settings/system", "System status", "settings.manage"]] as const;
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
