@@ -6,6 +6,7 @@ import type { Sql, TransactionSql } from "./db";
 import { canTransition, type OrderStatus } from "./order-status";
 import { couponDiscount, priceLines } from "./pricing";
 import { formatPaise } from "./money";
+import { loadStoreSettings, sellerSnapshot } from "./settings";
 import { STATE_CODES } from "./states";
 
 export class CheckoutError extends Error {}
@@ -43,6 +44,8 @@ export interface Quote {
   couponCode: string | null;
   couponMessage: string | null;
   shippingPaise: number;
+  /** GST inside the shipping charge (zero unless shipping GST is switched on in store settings). */
+  shippingTax: { gstRate: number; taxablePaise: number; cgstPaise: number; sgstPaise: number; igstPaise: number };
   taxPaise: number;
   totalPaise: number;
   estDaysMin: number;
@@ -176,8 +179,17 @@ export async function quote(
       cgstPaise: p.cgstPaise, sgstPaise: p.sgstPaise, igstPaise: p.igstPaise,
     };
   });
-  const tax = lines.reduce((a, l) => a + l.cgstPaise + l.sgstPaise + l.igstPaise, 0);
+  // Shipping charged with goods is a composite supply: taxed at the principal (highest) item rate when enabled.
+  const shippingTax = { gstRate: 0, taxablePaise: 0, cgstPaise: 0, sgstPaise: 0, igstPaise: 0 };
+  if (rate.feePaise > 0 && (await loadStoreSettings(tx)).shippingGstMode === "highest_item_rate") {
+    const r = Math.max(...lines.map((l) => l.gstRate));
+    const taxable = Math.round((rate.feePaise * 100) / (100 + r));
+    const t = rate.feePaise - taxable;
+    Object.assign(shippingTax, { gstRate: r, taxablePaise: taxable, cgstPaise: intra ? Math.floor(t / 2) : 0, sgstPaise: intra ? t - Math.floor(t / 2) : 0, igstPaise: intra ? 0 : t });
+  }
+  const tax = lines.reduce((a, l) => a + l.cgstPaise + l.sgstPaise + l.igstPaise, 0) + shippingTax.cgstPaise + shippingTax.sgstPaise + shippingTax.igstPaise;
   return {
+    shippingTax,
     lines, subtotalPaise: subtotal, discountPaise: discount, couponId, couponCode, couponMessage,
     shippingPaise: rate.feePaise, taxPaise: tax, totalPaise: afterDiscount + rate.feePaise,
     estDaysMin: rate.min, estDaysMax: rate.max,
@@ -213,13 +225,15 @@ export async function placeOrder(sql: Sql, input: PlaceOrderInput): Promise<Plac
         order_number, user_id, email, phone, guest_access_hash, status, payment_status,
         subtotal_paise, discount_paise, shipping_paise, tax_paise, total_paise, coupon_id, coupon_code,
         shipping_address, place_of_supply, est_delivery_from, est_delivery_to, idempotency_key,
-        reservation_expires_at, whatsapp_updates)
+        reservation_expires_at, whatsapp_updates,
+        shipping_gst_rate, shipping_taxable_paise, shipping_cgst_paise, shipping_sgst_paise, shipping_igst_paise)
       values (
         ${orderNumber}, ${input.userId ?? null}, ${input.email.toLowerCase()}, ${input.phone}, ${sha256(guestToken)},
         'pending_payment', 'pending', ${q.subtotalPaise}, ${q.discountPaise}, ${q.shippingPaise}, ${q.taxPaise}, ${q.totalPaise},
         ${q.couponId}, ${q.couponCode}, ${tx.json(input.address as never)}, ${input.address.stateCode},
         ${addDays(q.estDaysMin)}, ${addDays(q.estDaysMax)}, ${input.idempotencyKey},
-        now() + make_interval(mins => ${RESERVATION_MINUTES}), ${input.whatsappUpdates})
+        now() + make_interval(mins => ${RESERVATION_MINUTES}), ${input.whatsappUpdates},
+        ${q.shippingTax.gstRate}, ${q.shippingTax.taxablePaise}, ${q.shippingTax.cgstPaise}, ${q.shippingTax.sgstPaise}, ${q.shippingTax.igstPaise})
       returning id`;
     const orderId = o!.id;
 
@@ -316,8 +330,10 @@ export async function confirmPaidOrder(
                   then to_char(now() at time zone 'Asia/Kolkata', 'YYYY') || '-' || to_char((now() at time zone 'Asia/Kolkata') + interval '1 year', 'YY')
                   else to_char((now() at time zone 'Asia/Kolkata') - interval '1 year', 'YYYY') || '-' || to_char(now() at time zone 'Asia/Kolkata', 'YY') end as fy`;
     const fy = fyRow!.fy;
-    await tx`insert into shop.invoices (order_id, invoice_number)
-             values (${row.orderId}, ${"ZN/" + fy + "/"} || lpad(nextval('shop.invoice_number_seq')::text, 6, '0'))
+    // the seller's details are frozen on the invoice, so later edits never change an issued invoice
+    const seller = sellerSnapshot(await loadStoreSettings(tx));
+    await tx`insert into shop.invoices (order_id, invoice_number, seller)
+             values (${row.orderId}, ${"ZN/" + fy + "/"} || lpad(nextval('shop.invoice_number_seq')::text, 6, '0'), ${tx.json(seller as never)})
              on conflict (order_id) do nothing`;
     await tx`insert into shop.order_events (order_id, status, note, actor) values (${row.orderId}, 'confirmed', 'Payment verified with Razorpay', 'payment_gateway')`;
     await enqueueOrderNotification(tx, row.orderId, "order_confirmed");
@@ -455,6 +471,14 @@ export async function issueCreditNote(tx: TransactionSql, refundId: string) {
                round(i.sgst_paise::numeric * (i.quantity - i.returned_quantity) / i.quantity)::int as sgst,
                round(i.igst_paise::numeric * (i.quantity - i.returned_quantity) / i.quantity)::int as igst
         from shop.order_items i where i.order_id = ${r.orderId} and i.quantity > i.returned_quantity order by i.id`;
+  // a full cancellation also refunds the shipping charge: reverse its GST too
+  if (!r.returnId) {
+    const [sh] = await tx<{ fee: number; rate: string; taxable: number; cgst: number; sgst: number; igst: number }[]>`
+      select shipping_paise as fee, shipping_gst_rate::text as rate, shipping_taxable_paise as taxable, shipping_cgst_paise as cgst, shipping_sgst_paise as sgst, shipping_igst_paise as igst
+      from shop.orders where id = ${r.orderId}`;
+    const already = await tx`select 1 from shop.credit_notes c, jsonb_array_elements(c.lines) l where c.order_id = ${r.orderId} and l->>'hsn' = 'SHIPPING'`;
+    if (sh && sh.taxable > 0 && !already.length) lines.push({ orderItemId: null as never, hsn: "SHIPPING", gstRate: sh.rate, quantity: 0, taxable: sh.taxable, cgst: sh.cgst, sgst: sh.sgst, igst: sh.igst });
+  }
   let goods = lines.reduce((a, l) => a + l.taxable + l.cgst + l.sgst + l.igst, 0);
   if (goods > r.amount) {
     // partial refund: scale every component so the note equals what was refunded

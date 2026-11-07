@@ -30,6 +30,7 @@ export const NAV: { section: string; items: NavItem[] }[] = [
     { href: "/payments", label: "Payments", permission: "payments.read", phase: 1, icon: "card" },
     { href: "/refunds", label: "Refunds", permission: "refunds.create", phase: 1, icon: "undo" },
     { href: "/finance", label: "Finance", permission: "finance.read", phase: 1, icon: "rupee" },
+    { href: "/settings/tax", label: "Tax settings", permission: "tax.manage", phase: 1, icon: "list" },
   ] },
   { section: "Customers", items: [
     { href: "/customers", label: "Customers", permission: "customers.read", phase: 1, icon: "users" },
@@ -47,7 +48,7 @@ export const NAV: { section: string; items: NavItem[] }[] = [
     { href: "/staff", label: "Staff", permission: "staff.manage", phase: 1, icon: "badge" },
     { href: "/roles", label: "Roles", permission: "roles.manage", phase: 1, icon: "shield" },
     { href: "/audit-logs", label: "Audit log", permission: "audit.read", phase: 1, icon: "list" },
-    { href: "/settings", label: "Settings", permission: "settings.manage", phase: 7, icon: "cog" },
+    { href: "/settings", label: "Settings", permission: "settings.manage", phase: 1, icon: "cog" },
   ] },
 ];
 

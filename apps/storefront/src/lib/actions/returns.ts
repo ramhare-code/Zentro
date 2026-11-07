@@ -1,12 +1,14 @@
 "use server";
 
+import { getSettings } from "../settings";
+
 import { z } from "zod";
 import { CheckoutError, findOrderForGuest, requestReturn, type ReturnReason } from "@zentro/commerce/orders";
 import { rateLimited } from "../customer";
 import { db } from "../db";
 
 export type ReturnResult = { ok?: boolean; error?: string; message?: string } | undefined;
-export const returnWindowDays = async () => Number(process.env.RETURN_WINDOW_DAYS) || 7;
+export const returnWindowDays = async () => (await getSettings()).returnWindowDays;
 
 export async function requestReturnAction(_p: ReturnResult, f: FormData): Promise<ReturnResult> {
   const sql = db();

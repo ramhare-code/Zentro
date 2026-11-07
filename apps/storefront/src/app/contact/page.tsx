@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { businessInfo } from "@/lib/env";
+import { getBusiness } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "Contact us", alternates: { canonical: "/contact" } };
 
-export default function ContactPage() {
-  const b = businessInfo();
+export default async function ContactPage() {
+  const b = await getBusiness();
   const rows: [string, React.ReactNode][] = [];
   if (b.supportEmail) rows.push(["Email", <a key="e" href={`mailto:${b.supportEmail}`} className="font-semibold text-brand-700 hover:underline">{b.supportEmail}</a>]);
   if (b.supportPhone) rows.push(["Phone", <a key="p" href={`tel:${b.supportPhone.replace(/\s/g, "")}`} className="font-semibold text-brand-700 hover:underline">{b.supportPhone}</a>]);

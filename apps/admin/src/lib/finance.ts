@@ -1,4 +1,5 @@
 import "server-only";
+import { loadStoreSettings } from "@zentro/commerce/settings";
 import { db } from "./db";
 import type { DateRange } from "./metrics";
 
@@ -7,7 +8,7 @@ import type { DateRange } from "./metrics";
 const IST = (col: string) => `(${col} at time zone 'Asia/Kolkata')::date`;
 
 export interface ProfitTotals {
-  invoices: number; grossPaise: number; gstPaise: number; netSalesPaise: number; shippingPaise: number; discountPaise: number;
+  invoices: number; grossPaise: number; gstPaise: number; netSalesPaise: number; shippingPaise: number; untaxedShippingPaise: number; discountPaise: number;
   creditNotes: number; creditGrossPaise: number; creditGstPaise: number; creditNetPaise: number;
   cogsPaise: number; cogsReversedPaise: number; uncostedUnits: number;
   feesPaise: number; feeGstPaise: number; feesExGstPaise: number; feesMissing: number;
@@ -25,6 +26,7 @@ export async function profitTotals(r: DateRange): Promise<ProfitTotals> {
       (select coalesce(sum(o.total_paise), 0)::bigint::float8 from shop.invoices i join shop.orders o on o.id = i.order_id where ${inv} between ${r.from}::date and ${r.to}::date) as "grossPaise",
       (select coalesce(sum(o.tax_paise), 0)::bigint::float8 from shop.invoices i join shop.orders o on o.id = i.order_id where ${inv} between ${r.from}::date and ${r.to}::date) as "gstPaise",
       (select coalesce(sum(o.shipping_paise), 0)::bigint::float8 from shop.invoices i join shop.orders o on o.id = i.order_id where ${inv} between ${r.from}::date and ${r.to}::date) as "shippingPaise",
+      (select coalesce(sum(o.shipping_paise) filter (where o.shipping_taxable_paise = 0), 0)::bigint::float8 from shop.invoices i join shop.orders o on o.id = i.order_id where ${inv} between ${r.from}::date and ${r.to}::date) as "untaxedShippingPaise",
       (select coalesce(sum(o.discount_paise), 0)::bigint::float8 from shop.invoices i join shop.orders o on o.id = i.order_id where ${inv} between ${r.from}::date and ${r.to}::date) as "discountPaise",
       (select count(*)::int from shop.credit_notes c where ${cn} between ${r.from}::date and ${r.to}::date) as "creditNotes",
       (select coalesce(sum(c.total_paise), 0)::bigint::float8 from shop.credit_notes c where ${cn} between ${r.from}::date and ${r.to}::date) as "creditGrossPaise",
@@ -118,7 +120,7 @@ export interface GstRow { key: string; supply: "intra" | "inter"; gstRate: strin
 export async function gstBreakdown(r: DateRange, by: "rate" | "hsn" | "state"): Promise<GstRow[]> {
   const sql = db();
   // intra-state = place of supply is the seller's state (falls back to "no IGST charged" if not configured)
-  const seller = process.env.SELLER_STATE_CODE ?? "";
+  const seller = (await loadStoreSettings(sql)).stateCode ?? "";
   const intraInv = seller ? sql`o.place_of_supply = ${seller}` : sql`it.igst_paise = 0`;
   const intraCn = seller ? sql`o.place_of_supply = ${seller}` : sql`(l->>'igst')::int = 0`;
   const key = by === "hsn" ? sql`coalesce(x.hsn, 'NOT SET')` : by === "state" ? sql`x.pos` : sql`x.rate`;
@@ -128,6 +130,12 @@ export async function gstBreakdown(r: DateRange, by: "rate" | "hsn" | "state"): 
              it.quantity as qty, it.taxable_paise as taxable, it.cgst_paise as cgst, it.sgst_paise as sgst, it.igst_paise as igst
       from shop.invoices i join shop.orders o on o.id = i.order_id join shop.order_items it on it.order_id = o.id
       where ${sql.unsafe(IST("i.issued_at"))} between ${r.from}::date and ${r.to}::date
+      union all
+      -- GST inside the shipping charge (composite supply), when enabled in settings
+      select 'SHIPPING', o.shipping_gst_rate::text, o.place_of_supply, ${seller ? sql`o.place_of_supply = ${seller}` : sql`o.shipping_igst_paise = 0`},
+             0, o.shipping_taxable_paise, o.shipping_cgst_paise, o.shipping_sgst_paise, o.shipping_igst_paise
+      from shop.invoices i join shop.orders o on o.id = i.order_id
+      where o.shipping_taxable_paise > 0 and ${sql.unsafe(IST("i.issued_at"))} between ${r.from}::date and ${r.to}::date
       union all
       select l->>'hsn', l->>'gstRate', o.place_of_supply, ${intraCn},
              -(l->>'quantity')::int, -(l->>'taxable')::int, -(l->>'cgst')::int, -(l->>'sgst')::int, -(l->>'igst')::int
@@ -146,10 +154,10 @@ export async function invoiceRegister(r: DateRange, limit = 1000): Promise<Invoi
   return sql<InvoiceRow[]>`
     select i.invoice_number as number, i.issued_at as "issuedAt", o.order_number as "orderNumber", o.id as "orderId",
            o.shipping_address->>'fullName' as customer, o.place_of_supply as pos,
-           (select coalesce(sum(taxable_paise), 0)::int from shop.order_items where order_id = o.id) as taxable,
-           (select coalesce(sum(cgst_paise), 0)::int from shop.order_items where order_id = o.id) as cgst,
-           (select coalesce(sum(sgst_paise), 0)::int from shop.order_items where order_id = o.id) as sgst,
-           (select coalesce(sum(igst_paise), 0)::int from shop.order_items where order_id = o.id) as igst,
+           (select coalesce(sum(taxable_paise), 0)::int from shop.order_items where order_id = o.id) + o.shipping_taxable_paise as taxable,
+           (select coalesce(sum(cgst_paise), 0)::int from shop.order_items where order_id = o.id) + o.shipping_cgst_paise as cgst,
+           (select coalesce(sum(sgst_paise), 0)::int from shop.order_items where order_id = o.id) + o.shipping_sgst_paise as sgst,
+           (select coalesce(sum(igst_paise), 0)::int from shop.order_items where order_id = o.id) + o.shipping_igst_paise as igst,
            o.shipping_paise as shipping, o.total_paise as total, o.status
     from shop.invoices i join shop.orders o on o.id = i.order_id
     where ${sql.unsafe(IST("i.issued_at"))} between ${r.from}::date and ${r.to}::date

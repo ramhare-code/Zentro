@@ -14,6 +14,8 @@ export interface OrderView {
   shipments: { carrier: string; trackingNumber: string | null; trackingUrl: string | null; status: string; shippedAt: Date | null; deliveredAt: Date | null; events: { status: string; location: string | null; description: string | null; occurredAt: Date }[] }[];
   refunds: { amountPaise: number; status: string; createdAt: Date; processedAt: Date | null }[];
   invoiceNumber: string | null; invoiceDate: Date | null; deliveredAt: Date | null;
+  invoiceSeller: { name: string; legalName: string | null; address: string | null; gstin: string | null } | null;
+  shippingTax: { gstRate: string; taxablePaise: number; cgstPaise: number; sgstPaise: number; igstPaise: number };
   returns: { id: string; status: string; reason: string; note: string | null; createdAt: Date; items: { name: string; quantity: number }[] }[];
   returnable: { id: string; name: string; available: number }[];
 }
@@ -28,7 +30,9 @@ export async function getOrderView(orderId: string): Promise<OrderView | null> {
            to_char(o.est_delivery_from, 'YYYY-MM-DD') as "estFrom", to_char(o.est_delivery_to, 'YYYY-MM-DD') as "estTo",
            o.cancel_reason as "cancelReason",
            (o.status in ('pending_payment','payment_failed') and o.reservation_expires_at > now()) as "reservationOpen",
-           inv.invoice_number as "invoiceNumber", inv.issued_at as "invoiceDate", o.delivered_at as "deliveredAt"
+           inv.invoice_number as "invoiceNumber", inv.issued_at as "invoiceDate", o.delivered_at as "deliveredAt", inv.seller as "invoiceSeller",
+           json_build_object('gstRate', o.shipping_gst_rate::text, 'taxablePaise', o.shipping_taxable_paise, 'cgstPaise', o.shipping_cgst_paise,
+                             'sgstPaise', o.shipping_sgst_paise, 'igstPaise', o.shipping_igst_paise) as "shippingTax"
     from shop.orders o left join shop.invoices inv on inv.order_id = o.id where o.id = ${orderId}`;
   if (!o) return null;
   const [items, events, shipments, refunds, returns, returnable] = await Promise.all([

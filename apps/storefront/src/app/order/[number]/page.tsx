@@ -1,3 +1,4 @@
+import { getSettings } from "@/lib/settings";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,7 +38,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const cancelled = o.status === "cancelled";
   const canCancel = ["pending_payment", "payment_failed", "confirmed", "processing"].includes(o.status);
   const canPay = o.reservationOpen;
-  const windowDays = Number(process.env.RETURN_WINDOW_DAYS) || 7;
+  const windowDays = (await getSettings()).returnWindowDays;
   const returnDeadline = o.deliveredAt ? new Date(o.deliveredAt.getTime() + windowDays * 86_400_000) : null;
   const canReturn = ["delivered", "return_requested"].includes(o.status) && !!returnDeadline && returnDeadline > new Date() && o.returnable.length > 0;
 

@@ -1,4 +1,6 @@
 import { formatPaise, stateName } from "@zentro/commerce";
+import { loadStoreSettings } from "@zentro/commerce/settings";
+import { db } from "@/lib/db";
 import { FinanceNav, rangeQs } from "@/components/FinanceNav";
 import { gstBreakdown, type GstRow } from "@/lib/finance";
 import { parseRange } from "@/lib/metrics";
@@ -36,19 +38,20 @@ export default async function GstPage({ searchParams }: { searchParams: Promise<
   const ex = (report: string) => (s.permissions.has("finance.export") ? `/api/finance/export?report=${report}&${rangeQs(range)}` : undefined);
   const total = byRate.reduce((a, r) => a + r.cgst + r.sgst + r.igst, 0);
   const missingHsn = byHsn.some((r) => r.key === "NOT SET");
-  const configured = !!(process.env.BUSINESS_GSTIN && process.env.SELLER_STATE_CODE);
+  const st = await loadStoreSettings(db());
+  const configured = !!(st.gstin && st.stateCode);
   return (
     <div className="space-y-5">
       <FinanceNav active="/finance/gst" title="GST" range={range} />
       <section className="card space-y-2 p-5 text-sm">
         <p><span className="text-ink-muted">Output GST for the period, net of credit notes:</span> <strong className="text-lg tabular-nums">{formatPaise(total)}</strong></p>
         <p className="text-ink-muted">Figures are B2C outward supplies (all sales are to consumers), recognised on invoice and credit-note dates. Use them to prepare GSTR-1 (Table 7 / B2CS, Table 12 / HSN) and GSTR-3B. Zentro doesn’t file returns — review with your accountant.</p>
-        {!configured && <p className="font-semibold text-warn-700">BUSINESS_GSTIN and SELLER_STATE_CODE aren’t set on the admin site, so intra/inter-state classification falls back to whether IGST was charged.</p>}
+        {!configured && <p className="font-semibold text-warn-700">Your GSTIN and state aren’t set in Settings, so intra/inter-state classification falls back to whether IGST was charged.</p>}
         {missingHsn && <p className="font-semibold text-warn-700">Some products have no HSN code. Add them on the product page — HSN is required on invoices and in GSTR-1.</p>}
       </section>
       <Table id="rate" title="By tax rate" first="GST rate" rows={byRate} keyLabel={(r) => `${Number(r.key)}%`} exportHref={ex("gst-rate")} />
       <Table id="state" title="By place of supply (B2CS)" first="State · rate" rows={byState} keyLabel={(r) => `${stateName(r.key)} (${r.key}) · ${Number(r.gstRate)}%`} exportHref={ex("gst-state")} />
-      <Table id="hsn" title="HSN summary" first="HSN · rate" rows={byHsn} keyLabel={(r) => `${r.key} · ${Number(r.gstRate)}%`} exportHref={ex("hsn")} />
+      <Table id="hsn" title="HSN summary" first="HSN · rate" rows={byHsn} keyLabel={(r) => `${r.key === "SHIPPING" ? "Shipping (with goods)" : r.key} · ${Number(r.gstRate)}%`} exportHref={ex("hsn")} />
     </div>
   );
 }

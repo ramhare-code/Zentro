@@ -17,3 +17,16 @@ describe("finance helpers", () => {
     expect(prorate([0, 10, 0], 7)).toEqual([0, 7, 0]);
   });
 });
+
+import { gstinProblem } from "../src/states";
+describe("GSTIN validation", () => {
+  it("accepts a valid GSTIN in its own state", () => {
+    expect(gstinProblem("27AAPFU0939F1ZV", "MH")).toBeNull();
+    expect(gstinProblem("29AAGCB7383J1Z4", "KA")).toBeNull();
+  });
+  it("rejects bad format, wrong state and bad check digit", () => {
+    expect(gstinProblem("29ABC", "KA")).toMatch(/15 characters/);
+    expect(gstinProblem("27AAPFU0939F1ZV", "KA")).toMatch(/another state/);
+    expect(gstinProblem("27AAPFU0939F1ZX", "MH")).toMatch(/check digit/);
+  });
+});

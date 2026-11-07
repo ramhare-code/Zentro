@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import type { Placeholder } from "@zentro/commerce/content";
 import { db } from "./db";
-import { businessInfo } from "./env";
+import { getSettings } from "./settings";
 
 export interface PublishedPage { slug: string; kind: "policy" | "page"; title: string; summary: string | null; body: string; seoTitle: string | null; seoDescription: string | null; publishedAt: Date }
 
@@ -18,7 +18,8 @@ export const getFooterPages = cache(async () => db()<{ slug: string; kind: "poli
   select p.slug, p.kind, v.title from shop.content_pages p join shop.content_page_versions v on v.id = p.published_version_id
   where p.show_in_footer order by p.kind, p.sort_order, v.title`);
 
-export function placeholderValues(): Partial<Record<Placeholder, string | undefined>> {
-  const b = businessInfo();
-  return { business: b.legalName || b.name, email: b.supportEmail, phone: b.supportPhone, address: b.address, gstin: b.gstin, returnDays: String(Number(process.env.RETURN_WINDOW_DAYS) || 7) };
+export async function placeholderValues(): Promise<Partial<Record<Placeholder, string | undefined>>> {
+  const s = await getSettings();
+  const v = (x: string | null) => x ?? undefined;
+  return { business: s.legalName || s.businessName, email: v(s.supportEmail), phone: v(s.supportPhone), address: v(s.address), gstin: v(s.gstin), returnDays: String(s.returnWindowDays) };
 }

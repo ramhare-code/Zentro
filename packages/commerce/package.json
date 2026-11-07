@@ -11,7 +11,8 @@
     "./payments": "./src/payments.ts",
     "./messaging": "./src/messaging.ts",
     "./support": "./src/support.ts",
-    "./content": "./src/content.ts"
+    "./content": "./src/content.ts",
+    "./settings": "./src/settings.ts"
   },
   "dependencies": {
     "postgres": "3.4.9"

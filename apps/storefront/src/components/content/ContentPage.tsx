@@ -3,8 +3,8 @@ import type { PublishedPage } from "@/lib/content";
 import { placeholderValues } from "@/lib/content";
 import { RichText } from "./RichText";
 
-export function ContentPage({ page }: { page: PublishedPage }) {
-  const values = placeholderValues();
+export async function ContentPage({ page }: { page: PublishedPage }) {
+  const values = await placeholderValues();
   return (
     <article className="container-page max-w-3xl py-8">
       <h1 className="font-display text-3xl font-bold tracking-tight">{page.title}</h1>
@@ -15,8 +15,8 @@ export function ContentPage({ page }: { page: PublishedPage }) {
   );
 }
 
-export function pageMetadata(page: PublishedPage | null, path: string) {
+export async function pageMetadata(page: PublishedPage | null, path: string) {
   if (!page) return {};
-  const values = placeholderValues();
+  const values = await placeholderValues();
   return { title: page.seoTitle || page.title, description: fillPlaceholders(page.seoDescription || page.summary || "", values) || undefined, alternates: { canonical: path } };
 }

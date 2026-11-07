@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { formatPaise, stateName } from "@zentro/commerce";
 import { findOrderForGuest } from "@zentro/commerce/orders";
 import { db } from "@/lib/db";
-import { businessInfo } from "@/lib/env";
+import { getBusiness } from "@/lib/settings";
 import { getOrderView } from "@/lib/order-view";
 import { PrintButton } from "@/components/order/PrintButton";
 
@@ -16,7 +16,9 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
   const id = t ? await findOrderForGuest(db(), number, t) : null;
   const o = id ? await getOrderView(id) : null;
   if (!o || !o.invoiceNumber) return <p className="container-page py-16 text-center">Invoice not available.</p>;
-  const b = businessInfo();
+  // invoices issued after settings moved to the database carry a frozen copy of the seller's details
+  const current = await getBusiness();
+  const b = o.invoiceSeller ? { name: o.invoiceSeller.name, legalName: o.invoiceSeller.legalName ?? undefined, address: o.invoiceSeller.address ?? undefined, gstin: o.invoiceSeller.gstin ?? undefined } : current;
   // A GST tax invoice needs the seller's legal name, address and GSTIN. Without them we issue a receipt.
   const isTaxInvoice = !!(b.legalName && b.address && b.gstin);
   const intra = o.items.some((i) => i.cgstPaise > 0);
@@ -66,6 +68,10 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
         <dl className="ml-auto mt-4 w-64 space-y-1">
           {o.discountPaise > 0 && <div className="flex justify-between"><dt>Coupon discount</dt><dd>−{formatPaise(o.discountPaise)}</dd></div>}
           <div className="flex justify-between"><dt>Delivery</dt><dd>{formatPaise(o.shippingPaise)}</dd></div>
+          {o.shippingTax.taxablePaise > 0 && (
+            <div className="flex justify-between text-xs text-ink-muted"><dt>incl. GST {Number(o.shippingTax.gstRate)}% on delivery</dt>
+              <dd>{formatPaise(o.shippingTax.cgstPaise + o.shippingTax.sgstPaise + o.shippingTax.igstPaise)}</dd></div>
+          )}
           <div className="flex justify-between border-t border-line pt-1 text-base font-bold"><dt>Amount paid</dt><dd>{formatPaise(o.totalPaise)}</dd></div>
         </dl>
         {!isTaxInvoice && <p className="mt-6 text-xs text-ink-muted">This is a payment receipt. A GST tax invoice will be available once the seller’s GST details are configured.</p>}

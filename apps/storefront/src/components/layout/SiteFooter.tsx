@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getFooterPages } from "@/lib/content";
-import { businessInfo } from "@/lib/env";
+import { getBusiness } from "@/lib/settings";
 import { Logo } from "./Logo";
 import { CookieSettingsButton } from "../analytics/Analytics";
 
@@ -10,7 +10,7 @@ const COLUMNS = [
 ];
 
 export async function SiteFooter() {
-  const biz = businessInfo();
+  const biz = await getBusiness();
   // policies and pages published from the admin
   const pages = await getFooterPages().catch(() => []);
   const columns = [

@@ -1,5 +1,6 @@
 "use server";
 
+import { getSettings } from "../settings";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { STATE_CODES } from "@zentro/commerce";
@@ -43,8 +44,8 @@ async function linesFor(buy: CheckoutInput["buy"]) {
   return lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity }));
 }
 
-function sellerState(): string {
-  const s = serverEnv().SELLER_STATE_CODE;
+async function sellerState(): Promise<string> {
+  const s = (await getSettings()).stateCode;
   if (!s) throw new CheckoutError("The store isn’t set up to take orders yet (missing seller state for GST).");
   return s;
 }
@@ -57,7 +58,7 @@ export async function previewQuoteAction(p: { stateCode: string; pincode: string
     if (!STATE_CODES.includes(p.stateCode) || !/^[1-9]\d{5}$/.test(p.pincode)) return { ok: false, error: "" };
     const q = await quote(db(), {
       lines: await linesFor(p.buy), couponCode: p.couponCode?.trim().toUpperCase() || undefined, email: p.email ?? "",
-      userId: null, sellerStateCode: sellerState(), stateCode: p.stateCode, pincode: p.pincode,
+      userId: null, sellerStateCode: await sellerState(), stateCode: p.stateCode, pincode: p.pincode,
     });
     return { ok: true, quote: q };
   } catch (e) {
@@ -104,7 +105,7 @@ export async function placeOrderAction(raw: CheckoutInput): Promise<PlaceResult>
     const placed = await placeOrder(sql, {
       lines: await linesFor(input.buy), email: input.email, phone: input.address.phone, address: input.address,
       couponCode: input.couponCode, idempotencyKey: input.idempotencyKey, userId: (await getCustomer())?.id ?? null,
-      whatsappUpdates: input.consent.whatsappUpdates, sellerStateCode: sellerState(),
+      whatsappUpdates: input.consent.whatsappUpdates, sellerStateCode: await sellerState(),
     });
     if (!placed.existing) await recordConsent(input.email, input.address.phone, input.consent);
 

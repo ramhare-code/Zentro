@@ -27,11 +27,11 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   return (
     <div className="space-y-5">
       <FinanceNav active="/finance" title="Finance" range={range} exportHref={canExport ? `/api/finance/export?report=profit&${rangeQs(range)}` : undefined} />
-      {(t.uncostedUnits > 0 || t.feesMissing > 0 || (t.shippingPaise > 0)) && (
+      {(t.uncostedUnits > 0 || t.feesMissing > 0 || (t.shippingPaise > 0 && t.untaxedShippingPaise > 0)) && (
         <section aria-label="Data notes" className="card space-y-1 border-l-4 border-warn-500 p-4 text-sm">
           {t.uncostedUnits > 0 && <p><strong>{t.uncostedUnits} unit(s) sold have no cost price,</strong> so their cost is counted as ₹0 and profit is overstated. Costs are recorded when you <Link href="/purchase-orders" className="underline">receive a purchase order</Link>.</p>}
           {t.feesMissing > 0 && <p><strong>{t.feesMissing} payment(s) have no Razorpay fee yet.</strong> Fees arrive with a <Link href="/payments/reconcile" className="underline">gateway check or settlement import</Link>.</p>}
-          {t.shippingPaise > 0 && <p>Shipping charges ({formatPaise(t.shippingPaise)}) are currently collected <strong>without GST</strong>. Delivery charged with goods is usually taxable at the goods’ rate — confirm with your accountant before filing.</p>}
+          {t.untaxedShippingPaise > 0 && <p>Shipping charges of {formatPaise(t.untaxedShippingPaise)} were collected <strong>without GST</strong>. Delivery charged with goods is usually taxable at the goods’ rate — confirm with your accountant and switch it on in <Link href="/settings/tax" className="underline">Settings → Tax</Link>.</p>}
         </section>
       )}
       <div className="grid gap-5 lg:grid-cols-[22rem_1fr]">
