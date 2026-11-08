@@ -64,10 +64,10 @@ export function ProductInteractive({ productId, productName, media, variants, op
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-10">
       <Gallery media={media} activeId={variant?.mediaId} productName={productName} />
 
-      <div>
+      <div className="lg:sticky lg:top-32 lg:self-start">
         {header}
         <div className="mt-5 rounded-card bg-white p-5 ring-1 ring-line">
           {variant ? (
