@@ -13,10 +13,12 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${dev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https://*.razorpay.com ${imageHosts.map((h) => `https://${h}`).join(" ")}${supabaseHost ? ` https://${supabaseHost}` : ""}`,
+  `img-src 'self' data: blob: https://*.razorpay.com https://i.ytimg.com ${imageHosts.map((h) => `https://${h}`).join(" ")}${supabaseHost ? ` https://${supabaseHost}` : ""}`,
   "font-src 'self'",
   "connect-src 'self' https://*.razorpay.com",
-  "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+  "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.youtube-nocookie.com",
+  // product videos may be hosted anywhere over https (media can't run scripts)
+  "media-src 'self' blob: https:",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -46,6 +48,8 @@ const nextConfig: NextConfig = {
       // approved external image hosts (same list the admin accepts for image links)
       ...(process.env.MEDIA_REMOTE_HOSTS ?? "images.unsplash.com").split(",").map((h) => h.trim()).filter(Boolean)
         .map((hostname) => ({ protocol: "https" as const, hostname })),
+      // YouTube video thumbnails
+      { protocol: "https" as const, hostname: "i.ytimg.com", pathname: "/vi/**" },
       // production media: Supabase Storage public bucket
       ...(supabaseHost ? [{ protocol: "https" as const, hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }] : []),
     ],

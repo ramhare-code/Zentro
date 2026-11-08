@@ -92,7 +92,7 @@ test("verified reviews: clean ones publish and update the rating; flagged ones w
   await expect(speaker.getByText("Reviewed — thank you")).toBeVisible();
 
   await page.goto("/p/portable-bluetooth-speaker");
-  await expect(page.getByText("Based on 1 verified rating")).toBeVisible();
+  await expect(page.getByText("1 verified rating", { exact: true })).toBeVisible();
   await expect(page.getByText("Great bass for the size")).toBeVisible();
   await page.goto("/p/compact-travel-organizer");
   await expect(page.getByText("No reviews yet")).toBeVisible(); // pending, not shown

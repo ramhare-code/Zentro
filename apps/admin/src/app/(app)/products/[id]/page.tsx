@@ -159,9 +159,9 @@ export default async function ProductEditor({ params, searchParams }: { params: 
         <p className="mt-1 text-sm text-ink-muted">The first image is the main one. JPEG, PNG, WebP or AVIF, up to 5 MB, at least 200 × 200 px — square images of 1200 px or more look best.</p>
         <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {p.media.map((m, i) => (
-            <li key={m.id} className="rounded-xl bg-canvas p-3" aria-label={`${m.kind === "video" ? "Video" : "Image"} ${i + 1}`}>
+            <li key={m.id} className="rounded-xl bg-canvas p-3" aria-label={`${m.kind === "image" ? "Image" : "Video"} ${i + 1}`}>
               {m.kind === "image" ? <img src={mediaSrc(m.url)} alt={m.alt} className="aspect-square w-full rounded-lg bg-white object-cover" /> : (
-                <div className="grid aspect-square w-full place-items-center rounded-lg bg-ink text-sm text-white">▶ Video</div>
+                <div className="grid aspect-square w-full place-items-center rounded-lg bg-ink text-sm text-white">▶ {m.kind === "youtube" ? "YouTube video" : "Video"}</div>
               )}
               <p className="mt-2 text-xs text-ink-muted">{i === 0 ? "Main · " : ""}{m.width && m.height ? `${m.width}×${m.height}` : m.kind}</p>
               {write && (
@@ -189,7 +189,7 @@ export default async function ProductEditor({ params, searchParams }: { params: 
             </ActionForm>
             <ActionForm action={addVideoAction} className="space-y-3 rounded-xl bg-canvas p-4">
               <input type="hidden" name="productId" value={p.id} />
-              <label className="block text-sm font-medium">Video link (.mp4 / .webm)<input name="videoUrl" type="url" placeholder="https://…/demo.mp4" className="input mt-1.5 h-10" /></label>
+              <label className="block text-sm font-medium">Video link <span className="font-normal text-ink-muted">(YouTube, or .mp4 / .webm)</span><input name="videoUrl" type="url" placeholder="https://youtu.be/… or https://…/demo.mp4" className="input mt-1.5 h-10" /></label>
               <label className="block text-sm font-medium">Cover image<select name="posterMediaId" className="input mt-1.5 h-10"><option value="">None</option>{images.map((m, i) => <option key={m.id} value={m.id}>Image {i + 1}</option>)}</select></label>
               <input type="hidden" name="alt" value={`${p.name} video`} />
               <SubmitButton variant="secondary">Add video</SubmitButton>

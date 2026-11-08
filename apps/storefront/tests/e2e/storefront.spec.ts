@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import postgres from "postgres";
+import { E2E_DB } from "./global-setup";
 
 // These run against the development seed catalogue (npm run db:seed:dev).
 
@@ -9,8 +11,13 @@ test("homepage shows banners, categories and product rails", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Top deals" })).toBeVisible();
   const firstCard = page.locator("section", { has: page.locator("#deals") }).getByRole("article").first();
   await expect(firstCard).toBeVisible();
-  // no fabricated ratings: seed has no reviews
-  await expect(page.getByText(/ratings\)/)).toHaveCount(0);
+  // no fabricated ratings: a rating only appears on products with published, verified reviews
+  const db = postgres(E2E_DB, { max: 1 });
+  const rated = new Set((await db<{ slug: string }[]>`select slug from shop.products where rating_count > 0`).map((r) => `/p/${r.slug}`));
+  await db.end();
+  for (const card of await page.getByRole("article").filter({ hasText: /ratings\)/ }).all()) {
+    expect(rated.has((await card.getByRole("link").first().getAttribute("href"))!)).toBe(true);
+  }
 });
 
 test("category page filters by brand and stock, and paginates links", async ({ page }) => {

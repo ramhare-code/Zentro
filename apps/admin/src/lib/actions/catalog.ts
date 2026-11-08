@@ -10,6 +10,7 @@ import { parseCsv, parseOptions, slugify } from "../csv";
 import { db } from "../db";
 import { deleteStoredImage, MediaError, storeImage } from "../media";
 import { authorize } from "../session";
+import { classifyStoryMedia, isVideoFileUrl, youtubeId, type StorySection } from "@zentro/commerce/product-media";
 import { guarded, UserError, type ActionResult } from "./result";
 
 const str = (f: FormData, k: string, max = 5000) => String(f.get(k) ?? "").trim().slice(0, max);
@@ -40,6 +41,31 @@ interface ProductFields {
   name: string; slug: string; brand_id: string | null; category_id: string; short_description: string | null; description: string | null;
   highlights: string[]; specifications: unknown; hsn_code: string | null; gst_rate: number; is_featured: boolean;
   seo_title: string | null; seo_description: string | null;
+  box_contents: string[]; warranty: string | null; country_of_origin: string | null; manufacturer_info: string | null;
+  care_instructions: string | null; brand_story: StorySection[];
+}
+
+const OWN_MEDIA = /^\/media\/[0-9a-f-]{36}$/i;
+const storyImageOk = (u: string) => OWN_MEDIA.test(u) || allowedRemoteImage(u);
+
+/** Up to 8 "From the brand" sections: heading, text and an optional image, video file or YouTube link. */
+function readBrandStory(f: FormData): StorySection[] {
+  const titles = f.getAll("storyTitle").map(String), bodies = f.getAll("storyBody").map(String);
+  const links = f.getAll("storyMedia").map(String), picks = f.getAll("storyPick").map(String);
+  const out: StorySection[] = [];
+  for (let i = 0; i < titles.length; i++) {
+    const title = (titles[i] ?? "").trim(), body = (bodies[i] ?? "").trim();
+    const link = ((links[i] ?? "").trim() || (picks[i] ?? "").trim());
+    if (!title && !body && !link) continue;
+    if (!title) throw new UserError(`Brand section ${i + 1}: add a heading.`);
+    if (title.length > 120) throw new UserError(`Brand section ${i + 1}: keep the heading under 120 characters.`);
+    if (body.length > 2000) throw new UserError(`Brand section ${i + 1}: keep the text under 2000 characters.`);
+    const media = link ? classifyStoryMedia(link, storyImageOk) : null;
+    if (link && !media) throw new UserError(`Brand section ${i + 1}: use a YouTube link, an https .mp4/.webm video, one of this product's images, or an image from an approved host.`);
+    out.push({ title, body, mediaUrl: media?.url ?? null, mediaKind: media?.kind ?? null });
+  }
+  if (out.length > 8) throw new UserError("Up to 8 brand sections.");
+  return out;
 }
 
 async function readProductFields(f: FormData, sql: ReturnType<typeof db>): Promise<ProductFields> {
@@ -69,6 +95,22 @@ async function readProductFields(f: FormData, sql: ReturnType<typeof db>): Promi
     short_description: str(f, "shortDescription", 300) || null, description: str(f, "description", 10000) || null,
     highlights, specifications: specs, hsn_code: hsn, gst_rate: gst, is_featured: f.get("isFeatured") === "on",
     seo_title: str(f, "seoTitle", 70) || null, seo_description: str(f, "seoDescription", 170) || null,
+    ...readDetailFields(f),
+  };
+}
+
+function readDetailFields(f: FormData) {
+  const box = str(f, "boxContents", 4000).split("\n").map((h) => h.trim()).filter(Boolean);
+  if (box.length > 20 || box.some((h) => h.length > 120)) throw new UserError("What's in the box: up to 20 lines of 120 characters.");
+  const warranty = str(f, "warranty", 600), origin = str(f, "countryOfOrigin", 80);
+  const maker = str(f, "manufacturerInfo", 1200), care = str(f, "careInstructions", 1200);
+  if (warranty.length > 500) throw new UserError("Warranty: up to 500 characters.");
+  if (origin.length > 60) throw new UserError("Country of origin: up to 60 characters.");
+  if (maker.length > 1000) throw new UserError("Manufacturer details: up to 1000 characters.");
+  if (care.length > 1000) throw new UserError("Care instructions: up to 1000 characters.");
+  return {
+    box_contents: box, warranty: warranty || null, country_of_origin: origin || null,
+    manufacturer_info: maker || null, care_instructions: care || null, brand_story: readBrandStory(f),
   };
 }
 
@@ -89,7 +131,7 @@ export async function createProductAction(_p: ActionResult, f: FormData): Promis
       const [dsku] = await tx`select 1 from shop.product_variants where sku = ${sku}`;
       if (dsku) throw new UserError("That SKU is already in use.");
       const [p] = await tx<{ id: string }[]>`
-        insert into shop.products ${tx({ ...fields, specifications: tx.json(fields.specifications as never), is_active: false, created_by: s.staffId, updated_by: s.staffId } as never)} returning id`;
+        insert into shop.products ${tx({ ...fields, specifications: tx.json(fields.specifications as never), brand_story: tx.json(fields.brand_story as never), is_active: false, created_by: s.staffId, updated_by: s.staffId } as never)} returning id`;
       const [v] = await tx<{ id: string }[]>`insert into shop.product_variants (product_id, sku, price_paise, mrp_paise, stock) values (${p!.id}, ${sku}, ${price}, ${mrp}, ${stock}) returning id`;
       if (stock > 0) await tx`insert into shop.stock_movements (variant_id, delta, stock_after, reason, staff_id) values (${v!.id}, ${stock}, ${stock}, 'initial', ${s.staffId})`;
       await audit(s, { action: "product.create", entityType: "product", entityId: p!.id, details: { name: fields.name, sku } }, tx);
@@ -111,7 +153,7 @@ export async function updateProductAction(_p: ActionResult, f: FormData): Promis
       if (dupe) throw new UserError("Another product already uses this URL slug.");
       const [before] = await tx<{ slug: string }[]>`select slug from shop.products where id = ${id} for update`;
       if (!before) throw new UserError("Product not found.");
-      await tx`update shop.products set ${tx({ ...fields, specifications: tx.json(fields.specifications as never), updated_by: s.staffId } as never)} where id = ${id}`;
+      await tx`update shop.products set ${tx({ ...fields, specifications: tx.json(fields.specifications as never), brand_story: tx.json(fields.brand_story as never), updated_by: s.staffId } as never)} where id = ${id}`;
       await audit(s, { action: "product.update", entityType: "product", entityId: id, details: before.slug !== fields.slug ? { slug: { from: before.slug, to: fields.slug } } : {} }, tx);
     });
     await refresh(id, oldPaths);
@@ -341,15 +383,16 @@ export async function addVideoAction(_p: ActionResult, f: FormData): Promise<Act
   return guarded(async () => {
     const s = await authorize("products.write");
     const productId = z.guid().parse(f.get("productId"));
-    const url = str(f, "videoUrl", 1000);
-    let ok = false;
-    try { const u = new URL(url); ok = u.protocol === "https:" && /\.(mp4|webm)$/i.test(u.pathname); } catch { /* invalid */ }
-    if (!ok) throw new UserError("Use an https link to an .mp4 or .webm file (e.g. from your Supabase Storage bucket).");
+    const raw = str(f, "videoUrl", 1000);
+    const yt = youtubeId(raw);
+    const kind = yt ? "youtube" : "video";
+    const url = yt ? `https://www.youtube.com/watch?v=${yt}` : raw;
+    if (!yt && !isVideoFileUrl(raw)) throw new UserError("Paste a YouTube link, or an https link to an .mp4 or .webm file (e.g. from your Supabase Storage bucket).");
     const posterId = z.guid().safeParse(f.get("posterMediaId")).data;
     const sql = db();
     const poster = posterId ? (await sql<{ url: string }[]>`select url from shop.product_media where id = ${posterId} and product_id = ${productId} and kind = 'image'`)[0]?.url ?? null : null;
     const [{ n }] = (await sql<{ n: number }[]>`select count(*)::int as n from shop.product_media where product_id = ${productId}`) as unknown as [{ n: number }];
-    await sql`insert into shop.product_media (product_id, kind, url, poster_url, alt, sort_order) values (${productId}, 'video', ${url}, ${poster}, ${str(f, "alt", 200) || "Product video"}, ${n})`;
+    await sql`insert into shop.product_media (product_id, kind, url, poster_url, alt, sort_order) values (${productId}, ${kind}, ${url}, ${poster}, ${str(f, "alt", 200) || "Product video"}, ${n})`;
     await audit(s, { action: "media.add_video", entityType: "product", entityId: productId });
     await refresh(productId);
     return { ok: true, message: "Video added." };

@@ -197,3 +197,33 @@ test("category rules: no cycles, no deleting categories in use; bulk feature and
   expect(p).toEqual({ archived: true, featured: false });
   expect(a!.n).toBeGreaterThan(10);
 });
+
+test("manager adds detailed information and side-by-side brand sections with a YouTube video", async ({ page }) => {
+  const s = db();
+  const [p] = await s<{ id: string }[]>`select id from shop.products where slug = 'modern-insulated-bottle'`;
+  await s.end();
+  await acceptInvite(page, await createStaffInvite("details@zentro.test", "Dina Details", "manager"));
+  await page.goto(`/products/${p!.id}`);
+  const details = form(page, "Save details");
+  await details.getByLabel(/What’s in the box/).fill("Bottle\nSpare lid");
+  await details.getByLabel("Warranty").fill("6 months on the seal");
+  await details.getByLabel("Country of origin").fill("India");
+  await details.getByLabel(/Manufacturer, packer & importer/).fill("Lumen Home, 1 Test Road, Bengaluru 560001");
+  await details.getByLabel("Heading").first().fill("Keeps drinks cold");
+  await details.getByLabel("Text").first().fill("Double walls keep water **cold for 24 hours**.");
+  await details.getByLabel("Video or image link").first().fill("https://evil.example.com/x.jpg");
+  await details.getByRole("button", { name: "Save details" }).click();
+  await expect(details.locator('p[role="alert"]')).toContainText("Brand section 1: use a YouTube link");
+  await details.getByLabel("Video or image link").first().fill("https://youtu.be/dQw4w9WgXcQ?si=share");
+  await details.getByRole("button", { name: "Save details" }).click();
+  await expect(details.getByRole("status")).toContainText("Saved");
+
+  const s2 = db();
+  const [r] = await s2<{ box: string[]; warranty: string; origin: string; story: unknown }[]>`
+    select box_contents as box, warranty, country_of_origin as origin, brand_story as story from shop.products where id = ${p!.id}`;
+  await s2.end();
+  expect(r).toEqual({
+    box: ["Bottle", "Spare lid"], warranty: "6 months on the seal", origin: "India",
+    story: [{ title: "Keeps drinks cold", body: "Double walls keep water **cold for 24 hours**.", mediaUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", mediaKind: "youtube" }],
+  });
+});

@@ -9,7 +9,8 @@ import { TrackProductView } from "@/components/analytics/Analytics";
 import { WishlistButton } from "@/components/engage/WishlistButton";
 import { ProductInteractive } from "@/components/product/ProductInteractive";
 import { ReviewsSection } from "@/components/product/ReviewsSection";
-import { getProductBySlug, getPublishedReviews, getRelatedProducts } from "@/lib/catalog";
+import { AboutSection, BrandStory, SectionNav, SpecsAndInfo } from "@/components/product/ProductDetails";
+import { getProductBySlug, getPublishedReviews, getRelatedProducts, getReviewPhotos } from "@/lib/catalog";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 
 // Rendered on first request, then cached for 5 minutes. No generateStaticParams:
@@ -36,7 +37,7 @@ export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) notFound();
-  const [reviews, related] = await Promise.all([getPublishedReviews(product.id), getRelatedProducts(product)]);
+  const [reviews, related, reviewPhotos] = await Promise.all([getPublishedReviews(product.id, 5), getRelatedProducts(product), getReviewPhotos(product.id)]);
 
   const prices = product.variants.map((v) => v.pricePaise);
   const inStock = product.variants.some((v) => v.stock > 0);
@@ -65,6 +66,14 @@ export default async function ProductPage({ params }: Props) {
   // Only genuine, published reviews feed structured data.
   if (product.ratingCount > 0) {
     productLd.aggregateRating = { "@type": "AggregateRating", ratingValue: product.ratingAvg.toFixed(1), reviewCount: product.ratingCount };
+    productLd.review = reviews.slice(0, 5).map((r) => ({
+      "@type": "Review",
+      author: { "@type": "Person", name: r.displayName },
+      datePublished: new Date(r.createdAt).toISOString().slice(0, 10),
+      reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
+      name: r.title ?? undefined,
+      reviewBody: r.body ?? undefined,
+    }));
   }
 
   const crumbs = [{ name: "Home", path: "/" }, ...product.breadcrumbs.map((c) => ({ name: c.name, path: `/c/${c.slug}` })), { name: product.name, path: `/p/${product.slug}` }];
@@ -97,7 +106,7 @@ export default async function ProductPage({ params }: Props) {
                 </Link>
               )}
               <h1 className="mt-1 font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl">{product.name}</h1>
-              <RatingBadge avg={product.ratingAvg} count={product.ratingCount} className="mt-2" />
+              {product.ratingCount > 0 && <a href="#reviews" className="mt-2 inline-block rounded-md hover:opacity-80" aria-label={`Rated ${product.ratingAvg.toFixed(1)} out of 5 from ${product.ratingCount} ratings. Go to reviews`}><RatingBadge avg={product.ratingAvg} count={product.ratingCount} /></a>}
               {product.shortDescription && <p className="mt-3 text-ink-muted">{product.shortDescription}</p>}
               <div className="mt-4"><WishlistButton productId={product.id} slug={product.slug} /></div>
             </>
@@ -105,41 +114,20 @@ export default async function ProductPage({ params }: Props) {
         />
       </div>
 
-      <div className="mt-12 grid gap-8 lg:grid-cols-2">
-        {(product.highlights.length > 0 || product.description) && (
-          <section aria-labelledby="about" className="rounded-card bg-white p-6 ring-1 ring-line">
-            <h2 id="about" className="font-display text-xl font-bold">About this product</h2>
-            {product.highlights.length > 0 && (
-              <ul className="mt-4 space-y-2">
-                {product.highlights.map((h) => (
-                  <li key={h} className="flex gap-2 text-sm"><span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand-600" />{h}</li>
-                ))}
-              </ul>
-            )}
-            {product.description && <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink-muted">{product.description}</p>}
-          </section>
-        )}
-        {product.specifications.length > 0 && (
-          <section aria-labelledby="specs" className="rounded-card bg-white p-6 ring-1 ring-line">
-            <h2 id="specs" className="font-display text-xl font-bold">Specifications</h2>
-            {product.specifications.map((g) => (
-              <div key={g.group} className="mt-4">
-                <h3 className="text-sm font-semibold text-ink-muted">{g.group}</h3>
-                <dl className="mt-2 divide-y divide-line text-sm">
-                  {g.items.map((it) => (
-                    <div key={it.label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-2.5">
-                      <dt className="text-ink-muted">{it.label}</dt>
-                      <dd className="font-medium">{it.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            ))}
-          </section>
-        )}
+      <SectionNav
+        items={[
+          ...(product.highlights.length || product.description ? [{ id: "description", label: "Description" }] : []),
+          ...(product.brandStory.length ? [{ id: "from-the-brand", label: "From the brand" }] : []),
+          ...(product.specifications.length || product.boxContents.length || product.warranty || product.manufacturerInfo ? [{ id: "specifications", label: "Specifications" }] : []),
+          { id: "reviews", label: product.ratingCount ? `Reviews (${product.ratingCount.toLocaleString("en-IN")})` : "Reviews" },
+        ]}
+      />
+      <div className="mt-6 space-y-10">
+        <AboutSection product={product} />
+        <BrandStory product={product} />
+        <SpecsAndInfo product={product} />
+        <ReviewsSection product={product} reviews={reviews} photos={reviewPhotos} />
       </div>
-
-      <ReviewsSection product={product} reviews={reviews} />
 
       <div className="-mx-4 sm:-mx-6 lg:-mx-8">
         <ProductRail id="similar" title="Similar products" products={related.similar} href={`/c/${product.category.slug}`} />

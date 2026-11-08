@@ -2,7 +2,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { z } from "zod";
 import { ActionForm, SubmitButton } from "@/components/ActionForm";
-import { moderateReviewAction, removeReviewPhotoAction } from "@/lib/actions/reviews";
+import { moderateReviewAction, removeReviewPhotoAction, replyReviewAction } from "@/lib/actions/reviews";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { requirePermission } from "@/lib/session";
@@ -11,16 +11,24 @@ export const metadata = { title: "Reviews" };
 
 export default async function ReviewsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   await requirePermission("reviews.moderate");
-  const status = z.enum(["pending", "published", "rejected"]).safeParse((await searchParams).status).data ?? "pending";
+  const tab = z.enum(["pending", "published", "rejected", "reported"]).safeParse((await searchParams).status).data ?? "pending";
+  const status = tab === "reported" ? null : tab;
   const sql = db();
   const [rows, counts] = await Promise.all([
-    sql<{ id: string; product: string; slug: string; rating: number; title: string | null; body: string | null; displayName: string; flags: string[]; reason: string | null; orderNumber: string; orderId: string; createdAt: Date; photos: { id: string }[] }[]>`
+    sql<{ id: string; product: string; slug: string; rating: number; title: string | null; body: string | null; displayName: string; flags: string[]; reason: string | null; orderNumber: string; orderId: string; createdAt: Date; photos: { id: string }[];
+      status: string; reports: { reason: string; n: number }[]; reply: string | null; repliedAt: Date | null; helpful: number; variant: string | null }[]>`
       select r.id, p.name as product, p.slug, r.rating, r.title, r.body, r.display_name as "displayName", r.auto_flags as flags,
              r.moderation_reason as reason, o.order_number as "orderNumber", o.id as "orderId", r.created_at as "createdAt",
-             coalesce((select json_agg(json_build_object('id', m.id) order by m.sort_order) from shop.review_media m where m.review_id = r.id), '[]') as photos
+             coalesce((select json_agg(json_build_object('id', m.id) order by m.sort_order) from shop.review_media m where m.review_id = r.id), '[]') as photos,
+             r.status, r.seller_reply as reply, r.seller_replied_at as "repliedAt", r.helpful_count as helpful, i.variant_label as variant,
+             coalesce((select json_agg(json_build_object('reason', x.reason, 'n', x.n) order by x.n desc)
+                       from (select reason, count(*)::int as n from shop.review_reports where review_id = r.id group by reason) x), '[]') as reports
       from shop.reviews r join shop.products p on p.id = r.product_id join shop.order_items i on i.id = r.order_item_id join shop.orders o on o.id = i.order_id
-      where r.status = ${status} order by r.created_at ${status === "pending" ? sql`asc` : sql`desc`} limit 100`,
-    sql<{ status: string; n: number }[]>`select status, count(*)::int as n from shop.reviews group by status`,
+      where ${status ? sql`r.status = ${status}` : sql`exists (select 1 from shop.review_reports rr where rr.review_id = r.id)`}
+      order by ${tab === "reported" ? sql`r.report_count desc,` : sql``} r.created_at ${tab === "pending" ? sql`asc` : sql`desc`} limit 100`,
+    sql<{ status: string; n: number }[]>`
+      select status, count(*)::int as n from shop.reviews group by status
+      union all select 'reported', count(distinct review_id)::int from shop.review_reports`,
   ]);
   const count = (st: string) => counts.find((c) => c.status === st)?.n ?? 0;
   return (
@@ -30,8 +38,8 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
         <p className="mt-1 text-sm text-ink-muted">Only delivered buyers can review. Reviews without automatic flags publish immediately; flagged ones wait here. Moderation can publish or reject — never edit wording or stars — so ratings stay genuine.</p>
       </div>
       <nav aria-label="Review status" className="flex gap-2">
-        {(["pending", "published", "rejected"] as const).map((st) => (
-          <Link key={st} href={`?status=${st}`} aria-current={st === status ? "page" : undefined} className={clsx("rounded-full px-3 py-1.5 text-sm font-semibold capitalize ring-1", st === status ? "bg-brand-600 text-white ring-brand-600" : "bg-white ring-line")}>
+        {(["pending", "published", "rejected", "reported"] as const).map((st) => (
+          <Link key={st} href={`?status=${st}`} aria-current={st === tab ? "page" : undefined} className={clsx("rounded-full px-3 py-1.5 text-sm font-semibold capitalize ring-1", st === tab ? "bg-brand-600 text-white ring-brand-600" : "bg-white ring-line")}>
             {st} <span className="opacity-70">{count(st)}</span>
           </Link>
         ))}
@@ -42,9 +50,12 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="font-semibold">{r.product} · <span className="text-accent-700">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span></p>
-                <p className="text-xs text-ink-muted">{r.displayName} · verified buyer · <Link href={`/orders/${r.orderId}`} className="text-brand-700 hover:underline">{r.orderNumber}</Link> · {formatDateTime(r.createdAt)}</p>
+                <p className="text-xs text-ink-muted">{r.displayName} · verified buyer{r.variant ? ` · ${r.variant}` : ""} · {r.helpful} found helpful{tab === "reported" ? ` · ${r.status}` : ""} · <Link href={`/orders/${r.orderId}`} className="text-brand-700 hover:underline">{r.orderNumber}</Link> · {formatDateTime(r.createdAt)}</p>
               </div>
-              {r.flags.length > 0 && <p className="rounded-lg bg-warn-50 px-2 py-1 text-xs font-semibold text-warn-700">Flagged: {r.flags.join(", ")}</p>}
+              <div className="space-y-1 text-right">
+                {r.flags.length > 0 && <p className="rounded-lg bg-warn-50 px-2 py-1 text-xs font-semibold text-warn-700">Flagged: {r.flags.join(", ")}</p>}
+                {r.reports.length > 0 && <p className="rounded-lg bg-bad-50 px-2 py-1 text-xs font-semibold text-bad-700">Reported by customers: {r.reports.map((x) => `${x.reason.replace(/_/g, " ")} (${x.n})`).join(", ")}</p>}
+              </div>
             </div>
             {r.title && <p className="mt-3 font-medium">{r.title}</p>}
             {r.body && <p className="mt-1 whitespace-pre-line text-sm text-ink-muted">{r.body}</p>}
@@ -64,8 +75,9 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
             )}
             <ActionForm action={moderateReviewAction} className="mt-4 flex flex-wrap items-center gap-2">
               <input type="hidden" name="reviewId" value={r.id} />
-              {status !== "published" && <SubmitButton name="op" value="publish">Publish</SubmitButton>}
-              {status !== "rejected" && (
+              {r.status !== "published" && <SubmitButton name="op" value="publish">Publish</SubmitButton>}
+              {r.status === "published" && r.reports.length > 0 && <SubmitButton name="op" value="publish" variant="secondary">Keep published · clear reports</SubmitButton>}
+              {r.status !== "rejected" && (
                 <>
                   <select name="reason" aria-label="Rejection reason" className="input h-10 w-56 text-sm" defaultValue="">
                     <option value="">Reason to reject…</option>
@@ -77,9 +89,18 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
                 </>
               )}
             </ActionForm>
+            {r.status === "published" && (
+              <ActionForm action={replyReviewAction} className="mt-4 rounded-xl bg-canvas p-3">
+                <input type="hidden" name="reviewId" value={r.id} />
+                <label className="block text-sm font-medium">Public reply from the store <span className="font-normal text-ink-muted">{r.repliedAt ? `(last updated ${formatDateTime(r.repliedAt)}; clear the text to remove)` : "(optional — shown under the review)"}</span>
+                  <textarea name="reply" rows={2} maxLength={2000} defaultValue={r.reply ?? ""} placeholder="Thanks for the feedback! …" className="input mt-1.5 h-auto bg-white py-2" />
+                </label>
+                <SubmitButton variant="secondary" className="mt-2 h-9 text-sm">{r.reply ? "Update reply" : "Post reply"}</SubmitButton>
+              </ActionForm>
+            )}
           </li>
         ))}
-        {rows.length === 0 && <li className="card p-8 text-center text-ink-muted">No {status} reviews.</li>}
+        {rows.length === 0 && <li className="card p-8 text-center text-ink-muted">No {tab} reviews.</li>}
       </ul>
     </div>
   );

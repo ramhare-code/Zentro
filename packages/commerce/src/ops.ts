@@ -1,7 +1,7 @@
 // Health checks, job-run logging and error alerts. Server-side only.
 import type { Sql } from "./db";
 
-export const LATEST_MIGRATION = "0016_ops.sql";
+export const LATEST_MIGRATION = "0017_product_details_reviews.sql";
 
 export interface Health { ok: boolean; db: { ok: boolean; latencyMs: number | null; migration: string | null; upToDate: boolean }; checks: Record<string, string> }
 

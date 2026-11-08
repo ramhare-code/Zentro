@@ -27,6 +27,22 @@ select id, 'SKU-001-BLK', '{"Color":"Black"}', 249900, 299900, 50 from p;
 Upload images to the `product-media` Storage bucket and insert rows into `shop.product_media`
 (`kind = 'image'` or `'video'`, `sort_order` 0 = primary).
 
+## Product page details and videos
+
+In **Products → (product) → Details**:
+
+- **Full description** supports `## headings`, `- bullets` and `**bold**`.
+- **Product information**: what's in the box, warranty, country of origin, care instructions, and the **manufacturer, packer & importer name and address** (required on product listings under Indian packaging rules). Blank fields are hidden.
+- **From the brand**: up to 8 sections, each a heading and text with a picture or video beside it (sides alternate on computers, stacked on phones). For media paste a **YouTube link**, an https **.mp4/.webm** link, or pick one of the product's uploaded images.
+- **Images & video**: the gallery takes uploaded images plus video links (YouTube or .mp4/.webm). YouTube plays from the privacy-enhanced youtube-nocookie.com player and only loads when the shopper taps play.
+
+## Reviews
+
+- Only customers whose order was **delivered** can review; each order item can be reviewed once. Reviews show "Verified purchase" and the variant bought (e.g. Colour: Navy).
+- Shoppers can filter by stars or "with photos", sort (most helpful, newest, highest, lowest) and page through `/p/<product>/reviews`.
+- **Helpful** and **Report** need a signed-in customer (one vote each; customers can't vote on their own review). When **3 customers report** a review it is hidden and appears in **Admin → Reviews → Reported** with the reasons. Publish it again ("Keep published · clear reports") or reject it.
+- **Store replies**: on any published review, write a public reply; it shows as "Response from <store>". Clear the text to remove it. Staff can never edit a customer's words or stars.
+
 ## Stock
 
 `update shop.product_variants set stock = 120 where sku = 'SKU-001-BLK';`

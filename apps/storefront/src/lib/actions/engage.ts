@@ -7,6 +7,7 @@ import { findOrderForGuest } from "@zentro/commerce/orders";
 import { addToCartAction } from "./cart";
 import { getCustomer, rateLimited } from "../customer";
 import { db } from "../db";
+import { REPORT_REASONS } from "../review-reasons";
 
 // ------------------------------------------------------------------ wishlist
 
@@ -115,4 +116,59 @@ export async function submitReviewAction(_p: ReviewResult, f: FormData): Promise
   }
   if (item.slug) revalidatePath(`/p/${item.slug}`);
   return { ok: true, message: status === "published" ? "Thanks! Your review is live." : stored.length ? "Thanks! Your review and photos will appear after a quick check by our team." : "Thanks! Your review will appear after a quick check by our team." };
+}
+
+// ------------------------------------------------------------------ review feedback
+
+export type VoteResult = { ok: boolean; voted?: boolean; count?: number; needsLogin?: boolean; error?: string };
+
+async function refreshReviewPages(reviewId: string) {
+  const [p] = await db()<{ slug: string }[]>`select p.slug from shop.reviews r join shop.products p on p.id = r.product_id where r.id = ${reviewId}`;
+  if (p) { revalidatePath(`/p/${p.slug}`); revalidatePath(`/p/${p.slug}/reviews`); }
+}
+
+/** "Helpful" toggle: one vote per signed-in customer; the count is kept by a database trigger. */
+export async function voteHelpfulAction(reviewId: string): Promise<VoteResult> {
+  const id = z.guid().safeParse(reviewId).data;
+  if (!id) return { ok: false, error: "Invalid review." };
+  const c = await getCustomer();
+  if (!c) return { ok: false, needsLogin: true };
+  if (await rateLimited(`vote:${c.id}`, 60, 3600)) return { ok: false, error: "Too many votes. Please try again later." };
+  const sql = db();
+  const [r] = await sql<{ userId: string | null }[]>`select user_id as "userId" from shop.reviews where id = ${id} and status = 'published'`;
+  if (!r) return { ok: false, error: "This review is no longer available." };
+  if (r.userId === c.id) return { ok: false, error: "You can’t vote on your own review." };
+  const del = await sql`delete from shop.review_votes where review_id = ${id} and user_id = ${c.id}`;
+  if (!del.count) await sql`insert into shop.review_votes (review_id, user_id) values (${id}, ${c.id}) on conflict do nothing`;
+  const [{ n }] = (await sql<{ n: number }[]>`select helpful_count as n from shop.reviews where id = ${id}`) as unknown as [{ n: number }];
+  await refreshReviewPages(id);
+  return { ok: true, voted: !del.count, count: n };
+}
+
+const HIDE_AFTER_REPORTS = 3;
+
+/** Reports a review. After several customers report it, it is hidden until staff review it. */
+export async function reportReviewAction(reviewId: string, reason: string): Promise<VoteResult> {
+  const id = z.guid().safeParse(reviewId).data;
+  const why = z.enum(Object.keys(REPORT_REASONS) as [keyof typeof REPORT_REASONS]).safeParse(reason).data;
+  if (!id || !why) return { ok: false, error: "Choose a reason." };
+  const c = await getCustomer();
+  if (!c) return { ok: false, needsLogin: true };
+  if (await rateLimited(`report:${c.id}`, 20, 3600)) return { ok: false, error: "Too many reports. Please try again later." };
+  const sql = db();
+  const hidden = await sql.begin(async (tx) => {
+    const [r] = await tx<{ status: string }[]>`select status from shop.reviews where id = ${id} for update`;
+    if (!r || r.status !== "published") return false;
+    await tx`insert into shop.review_reports (review_id, reporter, reason) values (${id}, ${"c:" + c.id}, ${why}) on conflict do nothing`;
+    const [{ n }] = (await tx<{ n: number }[]>`
+      update shop.reviews set report_count = (select count(*) from shop.review_reports where review_id = ${id})
+      where id = ${id} returning report_count as n`) as unknown as [{ n: number }];
+    if (n >= HIDE_AFTER_REPORTS) {
+      await tx`update shop.reviews set status = 'pending', auto_flags = array_append(auto_flags, 'reported by customers') where id = ${id}`;
+      return true;
+    }
+    return false;
+  });
+  if (hidden) await refreshReviewPages(id);
+  return { ok: true };
 }

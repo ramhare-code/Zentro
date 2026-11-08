@@ -1,4 +1,5 @@
 import "server-only";
+import type { StorySection } from "@zentro/commerce/product-media";
 import { db } from "./db";
 
 export type ProductStatus = "draft" | "scheduled" | "published" | "archived";
@@ -48,9 +49,11 @@ export interface ProductForEdit {
   shortDescription: string | null; description: string | null; highlights: string[];
   specifications: { group: string; items: { label: string; value: string }[] }[];
   hsnCode: string | null; gstRate: string; isFeatured: boolean; publishAt: Date | null; seoTitle: string | null; seoDescription: string | null;
+  boxContents: string[]; warranty: string | null; countryOfOrigin: string | null; manufacturerInfo: string | null; careInstructions: string | null;
+  brandStory: StorySection[];
   ratingAvg: number; ratingCount: number; unitsSold: number; createdAt: Date; updatedAt: Date;
   variants: { id: string; sku: string; options: Record<string, string>; pricePaise: number; mrpPaise: number; stock: number; lowStockThreshold: number; weightGrams: number | null; mediaId: string | null; isActive: boolean; ordered: boolean }[];
-  media: { id: string; kind: "image" | "video"; url: string; posterUrl: string | null; alt: string; width: number | null; height: number | null; sortOrder: number }[];
+  media: { id: string; kind: "image" | "video" | "youtube"; url: string; posterUrl: string | null; alt: string; width: number | null; height: number | null; sortOrder: number }[];
 }
 
 export async function getProductForEdit(id: string): Promise<ProductForEdit | null> {
@@ -60,7 +63,9 @@ export async function getProductForEdit(id: string): Promise<ProductForEdit | nu
            p.short_description as "shortDescription", p.description, p.highlights, p.specifications, p.hsn_code as "hsnCode",
            p.gst_rate::text as "gstRate", p.is_featured as "isFeatured", p.publish_at as "publishAt", p.seo_title as "seoTitle",
            p.seo_description as "seoDescription", p.rating_avg::float8 as "ratingAvg", p.rating_count as "ratingCount",
-           p.units_sold as "unitsSold", p.created_at as "createdAt", p.updated_at as "updatedAt"
+           p.units_sold as "unitsSold", p.created_at as "createdAt", p.updated_at as "updatedAt",
+           p.box_contents as "boxContents", p.warranty, p.country_of_origin as "countryOfOrigin",
+           p.manufacturer_info as "manufacturerInfo", p.care_instructions as "careInstructions", p.brand_story as "brandStory"
     from shop.products p where p.id = ${id}`;
   if (!p) return null;
   const [variants, media] = await Promise.all([

@@ -1,4 +1,5 @@
 import "server-only";
+import type { StorySection } from "@zentro/commerce/product-media";
 import { cache } from "react";
 import { db } from "./db";
 import { PAGE_SIZE, queryTokens, type ListingFilters } from "./listing-params";
@@ -54,7 +55,7 @@ export interface Banner {
 
 export interface Media {
   id: string;
-  kind: "image" | "video";
+  kind: "image" | "video" | "youtube";
   url: string;
   posterUrl: string | null;
   alt: string;
@@ -96,6 +97,12 @@ export interface ProductDetail {
   variants: Variant[];
   optionNames: string[];
   updatedAt: string;
+  boxContents: string[];
+  warranty: string | null;
+  countryOfOrigin: string | null;
+  manufacturerInfo: string | null;
+  careInstructions: string | null;
+  brandStory: StorySection[];
 }
 
 export interface ListingResult {
@@ -356,13 +363,17 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
       highlights: string[]; specifications: ProductDetail["specifications"]; categoryId: string;
       brandSlug: string | null; brandName: string | null; ratingAvg: number; ratingCount: number; updatedAt: Date;
       seoTitle: string | null; seoDescription: string | null;
+      boxContents: string[]; warranty: string | null; countryOfOrigin: string | null; manufacturerInfo: string | null;
+      careInstructions: string | null; brandStory: StorySection[];
     }[]
   >`
     select p.id, p.slug, p.name, p.short_description as "shortDescription", p.description,
            p.highlights, p.specifications, p.category_id as "categoryId",
            b.slug as "brandSlug", b.name as "brandName",
            p.rating_avg::float8 as "ratingAvg", p.rating_count as "ratingCount", p.updated_at as "updatedAt",
-           p.seo_title as "seoTitle", p.seo_description as "seoDescription"
+           p.seo_title as "seoTitle", p.seo_description as "seoDescription",
+           p.box_contents as "boxContents", p.warranty, p.country_of_origin as "countryOfOrigin",
+           p.manufacturer_info as "manufacturerInfo", p.care_instructions as "careInstructions", p.brand_story as "brandStory"
     from shop.products p
     left join shop.brands b on b.id = p.brand_id
     where p.slug = ${slug} and shop.product_live(p.is_active, p.publish_at, p.archived_at)`;
@@ -419,6 +430,12 @@ export const getProductBySlug = cache(async (slug: string): Promise<ProductDetai
     variants,
     optionNames,
     updatedAt: p.updatedAt.toISOString(),
+    boxContents: p.boxContents,
+    warranty: p.warranty,
+    countryOfOrigin: p.countryOfOrigin,
+    manufacturerInfo: p.manufacturerInfo,
+    careInstructions: p.careInstructions,
+    brandStory: p.brandStory,
   };
 });
 
@@ -455,19 +472,73 @@ export interface PublishedReview {
   body: string | null;
   helpfulCount: number;
   createdAt: Date;
+  variantLabel: string | null;
+  sellerReply: string | null;
+  sellerRepliedAt: Date | null;
   photos: { url: string; width: number | null; height: number | null }[];
 }
 
+export const REVIEW_SORTS = { helpful: "Most helpful", newest: "Newest first", highest: "Highest rating", lowest: "Lowest rating" } as const;
+export type ReviewSort = keyof typeof REVIEW_SORTS;
+export interface ReviewFilters { rating: number | null; withPhotos: boolean; sort: ReviewSort; page: number }
+export const REVIEWS_PAGE_SIZE = 10;
+
+/** Reads ?rating=&photos=1&sort=&page= safely. */
+export function parseReviewFilters(sp: Record<string, string | string[] | undefined>): ReviewFilters {
+  const one = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]) ?? "";
+  const rating = Number(one("rating"));
+  const sort = one("sort");
+  const page = Math.floor(Number(one("page")));
+  return {
+    rating: Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : null,
+    withPhotos: one("photos") === "1",
+    sort: sort in REVIEW_SORTS ? (sort as ReviewSort) : "helpful",
+    page: Number.isFinite(page) && page >= 1 && page <= 500 ? page : 1,
+  };
+}
+
+/** Genuine, published reviews only. Every review comes from a delivered order. */
+export async function listReviews(productId: string, f: ReviewFilters, pageSize = REVIEWS_PAGE_SIZE): Promise<{ reviews: PublishedReview[]; total: number }> {
+  const sql = db();
+  const order = {
+    helpful: sql`(exists (select 1 from shop.review_media m where m.review_id = r.id)) desc, r.helpful_count desc, r.created_at desc`,
+    newest: sql`r.created_at desc`,
+    highest: sql`r.rating desc, r.helpful_count desc, r.created_at desc`,
+    lowest: sql`r.rating asc, r.helpful_count desc, r.created_at desc`,
+  }[f.sort];
+  const where = sql`r.product_id = ${productId} and r.status = 'published'
+    ${f.rating ? sql`and r.rating = ${f.rating}` : sql``}
+    ${f.withPhotos ? sql`and exists (select 1 from shop.review_media m where m.review_id = r.id)` : sql``}`;
+  const [reviews, [count]] = await Promise.all([
+    sql<PublishedReview[]>`
+      select r.id, r.display_name as "displayName", r.rating, r.title, r.body,
+             r.helpful_count as "helpfulCount", r.created_at as "createdAt", i.variant_label as "variantLabel",
+             r.seller_reply as "sellerReply", r.seller_replied_at as "sellerRepliedAt",
+             coalesce((select json_agg(json_build_object('url', m.url, 'width', m.width, 'height', m.height) order by m.sort_order)
+                       from shop.review_media m where m.review_id = r.id), '[]') as photos
+      from shop.reviews r left join shop.order_items i on i.id = r.order_item_id
+      where ${where}
+      order by ${order}
+      limit ${pageSize} offset ${(f.page - 1) * pageSize}`,
+    sql<{ n: number }[]>`select count(*)::int as n from shop.reviews r where ${where}`,
+  ]);
+  return { reviews, total: count?.n ?? 0 };
+}
+
 export async function getPublishedReviews(productId: string, limit = 10): Promise<PublishedReview[]> {
-  return db()<PublishedReview[]>`
-    select r.id, r.display_name as "displayName", r.rating, r.title, r.body,
-           r.helpful_count as "helpfulCount", r.created_at as "createdAt",
-           coalesce((select json_agg(json_build_object('url', m.url, 'width', m.width, 'height', m.height) order by m.sort_order)
-                     from shop.review_media m where m.review_id = r.id), '[]') as photos
-    from shop.reviews r
-    where r.product_id = ${productId} and r.status = 'published'
-    order by (exists (select 1 from shop.review_media m where m.review_id = r.id)) desc, r.helpful_count desc, r.created_at desc
-    limit ${limit}`;
+  return (await listReviews(productId, { rating: null, withPhotos: false, sort: "helpful", page: 1 }, limit)).reviews;
+}
+
+/** Customer photos across all published reviews, newest first. */
+export async function getReviewPhotos(productId: string, limit = 12): Promise<{ photos: { url: string; reviewId: string }[]; total: number }> {
+  const sql = db();
+  const [photos, [c]] = await Promise.all([
+    sql<{ url: string; reviewId: string }[]>`
+      select m.url, m.review_id as "reviewId" from shop.review_media m join shop.reviews r on r.id = m.review_id
+      where r.product_id = ${productId} and r.status = 'published' order by r.created_at desc, m.sort_order limit ${limit}`,
+    sql<{ n: number }[]>`select count(distinct r.id)::int as n from shop.reviews r join shop.review_media m on m.review_id = r.id where r.product_id = ${productId} and r.status = 'published'`,
+  ]);
+  return { photos, total: c?.n ?? 0 };
 }
 
 // ---------------------------------------------------------------------

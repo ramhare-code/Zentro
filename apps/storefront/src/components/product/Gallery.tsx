@@ -4,7 +4,15 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import type { Media } from "@/lib/catalog";
-import { CloseIcon, PlayIcon, ZoomIcon } from "../icons";
+import { youtubeId, youtubeThumbUrl } from "@zentro/commerce/product-media";
+import { ChevronLeft, ChevronRight, CloseIcon, PlayIcon, ZoomIcon } from "../icons";
+import { VideoFile, YouTubeEmbed } from "./MediaEmbed";
+
+function thumbOf(m: Media): string | null {
+  if (m.kind === "image") return m.url;
+  if (m.kind === "youtube") { const id = youtubeId(m.url); return m.posterUrl ?? (id ? youtubeThumbUrl(id) : null); }
+  return m.posterUrl;
+}
 
 export function Gallery({ media, activeId, productName }: { media: Media[]; activeId?: string | null; productName: string }) {
   const [index, setIndex] = useState(0);
@@ -31,12 +39,12 @@ export function Gallery({ media, activeId, productName }: { media: Media[]; acti
               <button
                 type="button"
                 onClick={() => setIndex(i)}
-                aria-label={`Show ${m.kind === "video" ? "video" : "image"} ${i + 1} of ${media.length}`}
+                aria-label={`Show ${m.kind === "image" ? "image" : "video"} ${i + 1} of ${media.length}`}
                 aria-current={i === index}
                 className={clsx("relative block size-16 overflow-hidden rounded-xl bg-brand-50 ring-2 md:size-20", i === index ? "ring-brand-600" : "ring-transparent hover:ring-line-strong")}
               >
-                <Image src={m.kind === "video" ? (m.posterUrl ?? m.url) : m.url} alt="" fill sizes="80px" className="object-cover" />
-                {m.kind === "video" && <span className="absolute inset-0 grid place-items-center bg-ink/30 text-white"><PlayIcon size={20} /></span>}
+                {thumbOf(m) ? <Image src={thumbOf(m)!} alt="" fill sizes="80px" className="object-cover" /> : <span className="absolute inset-0 bg-ink" />}
+                {m.kind !== "image" && <span className="absolute inset-0 grid place-items-center bg-ink/30 text-white"><PlayIcon size={20} /></span>}
               </button>
             </li>
           ))}
@@ -44,18 +52,10 @@ export function Gallery({ media, activeId, productName }: { media: Media[]; acti
       )}
 
       <div className="relative flex-1">
-        {current.kind === "video" ? (
-          <video
-            key={current.id}
-            src={current.url}
-            poster={current.posterUrl ?? undefined}
-            controls
-            preload="none"
-            playsInline
-            className="aspect-square w-full rounded-card bg-ink object-contain"
-          >
-            <track kind="captions" />
-          </video>
+        {current.kind === "youtube" ? (
+          <YouTubeEmbed key={current.id} url={current.url} title={current.alt || `${productName} video`} className="block aspect-square w-full rounded-card" />
+        ) : current.kind === "video" ? (
+          <VideoFile key={current.id} url={current.url} poster={current.posterUrl} title={current.alt || `${productName} video`} className="aspect-square w-full rounded-card" />
         ) : (
           <button
             type="button"
@@ -81,6 +81,13 @@ export function Gallery({ media, activeId, productName }: { media: Media[]; acti
               <ZoomIcon size={18} />
             </span>
           </button>
+        )}
+        {media.length > 1 && (
+          <>
+            <button type="button" onClick={() => setIndex((index - 1 + media.length) % media.length)} aria-label="Previous photo or video" className="absolute left-2 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow ring-1 ring-line hover:bg-white"><ChevronLeft size={20} /></button>
+            <button type="button" onClick={() => setIndex((index + 1) % media.length)} aria-label="Next photo or video" className="absolute right-2 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow ring-1 ring-line hover:bg-white"><ChevronRight size={20} /></button>
+            <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-semibold text-white" aria-live="polite">{index + 1} / {media.length}</span>
+          </>
         )}
       </div>
 

@@ -37,3 +37,7 @@ export const ReturnIcon = (p: IconProps) => (<svg {...base(p)}><path d="M9 14 4 
 export const HeadsetIcon = (p: IconProps) => (<svg {...base(p)}><path d="M4 14v-2a8 8 0 0 1 16 0v2" /><rect x="3" y="14" width="4" height="6" rx="1.5" /><rect x="17" y="14" width="4" height="6" rx="1.5" /></svg>);
 export const PlayIcon = (p: IconProps) => (<svg {...base(p)}><path d="M8 5v14l11-7z" fill="currentColor" /></svg>);
 export const ZoomIcon = (p: IconProps) => (<svg {...base(p)}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5M11 8v6M8 11h6" /></svg>);
+export const ThumbUpIcon = (p: IconProps) => (<svg {...base(p)}><path d="M7 11v9H4v-9zM7 11l4-7a2 2 0 0 1 3 2l-1 4h5.5a2 2 0 0 1 2 2.4l-1.3 6A2 2 0 0 1 17.2 20H7" /></svg>);
+export const FlagIcon = (p: IconProps) => (<svg {...base(p)}><path d="M5 21V4M5 4h11l-2 4 2 4H5" /></svg>);
+export const CheckBadgeIcon = (p: IconProps) => (<svg {...base(p)}><circle cx="12" cy="12" r="9" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>);
+export const BoxIcon = (p: IconProps) => (<svg {...base(p)}><path d="M3 8 12 3l9 5v8l-9 5-9-5z" /><path d="m3 8 9 5 9-5M12 13v8" /></svg>);
