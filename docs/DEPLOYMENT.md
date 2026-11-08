@@ -65,6 +65,7 @@ Generate each secret with `openssl rand -base64 32`. Values marked **both** must
 | `SHIPROCKET_WEBHOOK_TOKEN` | ✓ | | |
 | `MEDIA_STORAGE`, `MEDIA_BUCKET`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | ✓ | ✓ | step 1.5 |
 | `ALERT_WEBHOOK_URL` | ✓ | ✓ | optional Slack/Discord/Chat webhook |
+| `SKIP_BUILD_PRERENDER` | `1` only if needed | | set when the build can't reach the database (e.g. pooler drops build connections); pages then render per request instead of being cached |
 
 Business details (legal name, GSTIN, state, support contacts, grievance officer, return window) are entered in **Admin → Settings** after launch. The `BUSINESS_*`, `SUPPORT_*`, `SELLER_STATE_CODE` and `RETURN_WINDOW_DAYS` variables are only fallbacks.
 

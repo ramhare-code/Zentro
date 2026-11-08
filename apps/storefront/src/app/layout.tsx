@@ -6,6 +6,7 @@ import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { ConsentBanner, PageViewTracker } from "@/components/analytics/Analytics";
 import { Suspense } from "react";
 import { SITE_NAME, siteUrl } from "@/lib/site";
+import { renderAtRequestIfConfigured } from "@/lib/render";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -28,7 +29,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  await renderAtRequestIfConfigured();
   return (
     <html lang="en-IN" className={`${inter.variable} ${jakarta.variable}`}>
       <body className="min-h-dvh">

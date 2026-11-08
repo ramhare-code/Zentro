@@ -2,10 +2,12 @@ import type { MetadataRoute } from "next";
 import { getSitemapEntries } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { siteUrl } from "@/lib/site";
+import { renderAtRequestIfConfigured } from "@/lib/render";
 
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await renderAtRequestIfConfigured();
   const { products, categories } = await getSitemapEntries();
   const pages = await db()<{ path: string; at: Date }[]>`
     select case when kind = 'policy' then '/policies/' else '/pages/' end || slug as path, published_at as at
