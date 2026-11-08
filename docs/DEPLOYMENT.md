@@ -70,9 +70,9 @@ Business details (legal name, GSTIN, state, support contacts, grievance officer,
 
 ## 3. Scheduled job
 
-`apps/storefront/vercel.json` runs `/api/cron/maintenance` every 5 minutes. It confirms payments whose callback was missed, releases expired stock holds, sends queued messages, starts scheduled campaigns, syncs courier tracking and refreshes cached pages when promotions start or end.
+`apps/storefront/vercel.json` runs `/api/cron/maintenance` once a day (03:00 IST) so it deploys on Vercel's free Hobby plan. The job should really run every 5 minutes. It confirms payments whose callback was missed, releases expired stock holds, sends queued messages, starts scheduled campaigns, syncs courier tracking and refreshes cached pages when promotions start or end.
 
-* Vercel **Hobby** plans only allow daily cron jobs. On Hobby, use an external scheduler (for example cron-job.org or a GitHub Actions schedule) to call
+* On **Pro**, change the schedule in `vercel.json` to `*/5 * * * *`. On **Hobby** (daily cron only), use an external scheduler (for example cron-job.org or a GitHub Actions schedule) to call
   `GET https://www.yourstore.in/api/cron/maintenance` with header `Authorization: Bearer <CRON_SECRET>` every 5 minutes.
 * **Admin → Settings → System status** shows every run; it turns amber if the job hasn't run for 15 minutes.
 
