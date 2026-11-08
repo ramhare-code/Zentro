@@ -22,7 +22,7 @@ export async function SiteFooter() {
     <footer className="mt-12 border-t border-line bg-white pb-20 lg:pb-0">
       <div className="container-page grid gap-10 py-12 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
-          <Logo />
+          <Logo id="footer-logo" />
           <p className="mt-3 max-w-xs text-sm text-ink-muted">Everything. One place. Thoughtfully chosen products, delivered across India.</p>
           {(biz.supportEmail || biz.supportPhone) && (
             <ul className="mt-4 space-y-1 text-sm">

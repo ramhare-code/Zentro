@@ -1,23 +1,17 @@
-import { SITE_NAME } from "@/lib/site";
+import { SplashIntro } from "./SplashIntro";
 
 /**
- * Brief animated logo intro, shown once per browser session. The inline script
- * runs before the overlay is parsed, so returning visitors never see a flash.
- * Pure CSS: it never blocks taps (pointer-events: none) and is skipped for
- * people who prefer reduced motion.
+ * Decides before first paint whether this visit plays the intro: once per
+ * browser session, never with reduced motion. The overlay only shows while
+ * <html> has the `intro-playing` class, so returning pages never flash it.
  */
-const SEEN_SCRIPT = `try{if(sessionStorage.getItem("zentro-splash")){document.documentElement.classList.add("splash-seen")}else{sessionStorage.setItem("zentro-splash","1")}}catch(e){}`;
+const DECIDE = `try{var d=document.documentElement;if(!sessionStorage.getItem("zentro-intro")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.add("intro-playing")}sessionStorage.setItem("zentro-intro","1")}catch(e){}`;
 
 export function SplashScreen() {
   return (
     <>
-      <script dangerouslySetInnerHTML={{ __html: SEEN_SCRIPT }} />
-      <div className="splash" aria-hidden="true">
-        <div className="splash-inner">
-          <span className="splash-mark">Z</span>
-          <span className="splash-word">{SITE_NAME}</span>
-        </div>
-      </div>
+      <script dangerouslySetInnerHTML={{ __html: DECIDE }} />
+      <SplashIntro />
     </>
   );
 }

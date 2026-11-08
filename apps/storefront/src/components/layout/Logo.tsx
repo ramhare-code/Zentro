@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { SITE_NAME } from "@/lib/site";
+import { BrandMark } from "./BrandMark";
 
-export function Logo({ className = "" }: { className?: string }) {
+/** Header/footer logo. Proportions match the intro (mark 1em, word 0.555em, gap 0.222em). */
+export function Logo({ className = "", id = "logo" }: { className?: string; id?: string }) {
   return (
-    <Link href="/" className={`inline-flex items-center gap-2 ${className}`} aria-label={`${SITE_NAME} home`}>
-      <span aria-hidden className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-800 font-display text-lg font-extrabold text-white shadow-card">
-        Z
-      </span>
-      <span className="font-display text-xl font-extrabold tracking-tight text-ink">{SITE_NAME}</span>
+    <Link href="/" className={`inline-flex items-center gap-2 ${className}`} aria-label={`${SITE_NAME} home`} data-brand>
+      <BrandMark id={id} className="size-9 shrink-0 rounded-xl shadow-card" />
+      <span className="font-display text-xl font-extrabold tracking-tight text-ink" data-brand-word>{SITE_NAME}</span>
     </Link>
   );
 }

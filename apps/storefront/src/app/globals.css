@@ -89,52 +89,60 @@
   @media (width >= 64rem) { padding-inline: 2rem; }
 }
 
-/* Animated logo intro (SplashScreen.tsx) */
-.splash {
+/* Opening logo intro (SplashIntro.tsx). Shown only while <html> has
+   .intro-playing, which an inline script sets once per session. */
+.intro { display: none; }
+.intro-playing .intro {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, var(--color-brand-900), var(--color-brand-600));
   pointer-events: none;
-  animation: splash-out 0.45s ease 1.3s forwards;
+  /* safety net if scripts fail: never leave the overlay up */
+  animation: intro-failsafe 0.3s ease 4s forwards;
 }
-.splash-inner { display: flex; align-items: center; gap: 0.9rem; }
-.splash-mark {
-  display: grid;
-  place-items: center;
-  width: 4.5rem;
-  height: 4.5rem;
-  border-radius: 1.25rem;
-  background: linear-gradient(135deg, var(--color-brand-400), var(--color-brand-800));
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.25);
-  color: #fff;
+.intro-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 50% 45%, rgb(255 181 71 / 0.12), transparent 70%),
+    linear-gradient(160deg, #ffffff, var(--color-brand-50));
+}
+/* Same proportions as the header logo: mark 1em, word 0.555em, gap 0.222em */
+.intro-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.222em;
+  font-size: min(24vw, 7rem);
+  will-change: transform;
+}
+.intro-tile {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  border-radius: 0.25em;
+  box-shadow: 0 0.2em 0.6em rgb(67 32 138 / 0.35);
+}
+.intro-word {
   font-family: var(--font-display);
-  font-size: 2.4rem;
+  font-size: 0.555em;
   font-weight: 800;
-  animation: splash-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--color-ink);
 }
-.splash-word {
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  animation: splash-word 0.5s ease 0.4s both;
+/* Keep the real header logo hidden until the intro logo lands on it */
+.intro-playing header [data-brand] {
+  visibility: hidden;
+  animation: intro-show 0s 4s forwards;
 }
-.splash-seen .splash { display: none; }
-@keyframes splash-pop {
-  from { opacity: 0; transform: scale(0.3) rotate(-25deg); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes splash-word {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes splash-out {
-  to { opacity: 0; visibility: hidden; }
-}
+.intro-reveal #main { animation: intro-page 0.5s ease both; }
+@keyframes intro-failsafe { to { opacity: 0; visibility: hidden; } }
+@keyframes intro-show { to { visibility: visible; } }
+@keyframes intro-page { from { opacity: 0.6; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-  .splash { display: none; }
+  .intro-playing .intro { display: none; }
+  .intro-playing header [data-brand] { visibility: visible; }
 }
