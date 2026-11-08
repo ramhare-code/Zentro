@@ -12,11 +12,10 @@ import { ReviewsSection } from "@/components/product/ReviewsSection";
 import { getProductBySlug, getPublishedReviews, getRelatedProducts } from "@/lib/catalog";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 
+// Rendered on first request, then cached for 5 minutes. No generateStaticParams:
+// declaring the route as statically generated breaks it when the root layout
+// opts into request-time rendering (SKIP_BUILD_PRERENDER=1).
 export const revalidate = 300;
-// Pages are generated on first request, then cached.
-export async function generateStaticParams() {
-  return [];
-}
 
 type Props = { params: Promise<{ slug: string }> };
 
