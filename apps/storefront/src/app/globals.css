@@ -88,3 +88,53 @@
   @media (width >= 40rem) { padding-inline: 1.5rem; }
   @media (width >= 64rem) { padding-inline: 2rem; }
 }
+
+/* Animated logo intro (SplashScreen.tsx) */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--color-brand-900), var(--color-brand-600));
+  pointer-events: none;
+  animation: splash-out 0.45s ease 1.3s forwards;
+}
+.splash-inner { display: flex; align-items: center; gap: 0.9rem; }
+.splash-mark {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, var(--color-brand-400), var(--color-brand-800));
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.25);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 800;
+  animation: splash-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.splash-word {
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  animation: splash-word 0.5s ease 0.4s both;
+}
+.splash-seen .splash { display: none; }
+@keyframes splash-pop {
+  from { opacity: 0; transform: scale(0.3) rotate(-25deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes splash-word {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes splash-out {
+  to { opacity: 0; visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash { display: none; }
+}

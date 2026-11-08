@@ -7,6 +7,7 @@ import { ConsentBanner, PageViewTracker } from "@/components/analytics/Analytics
 import { Suspense } from "react";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import { renderAtRequestIfConfigured } from "@/lib/render";
+import { SplashScreen } from "@/components/layout/SplashScreen";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -32,8 +33,9 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   await renderAtRequestIfConfigured();
   return (
-    <html lang="en-IN" className={`${inter.variable} ${jakarta.variable}`}>
+    <html lang="en-IN" className={`${inter.variable} ${jakarta.variable}`} suppressHydrationWarning>
       <body className="min-h-dvh">
+        <SplashScreen />
         <a href="#main" className="sr-only z-50 rounded-full bg-brand-600 px-4 py-2 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-3">
           Skip to content
         </a>
