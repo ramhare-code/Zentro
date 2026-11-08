@@ -17,7 +17,9 @@ export function getSql(url: string, opts: { max?: number } = {}): Sql {
     sql = postgres(url, {
       // Supabase's transaction pooler does not support prepared statements.
       prepare: false,
-      max: opts.max ?? (process.env.NODE_ENV === "production" ? 5 : 3),
+      // During `next build` pages are prerendered in parallel; opening many
+      // pooler connections at once gets them dropped, so queue on one.
+      max: process.env.NEXT_PHASE === "phase-production-build" ? 1 : opts.max ?? (process.env.NODE_ENV === "production" ? 5 : 3),
       idle_timeout: 20,
       connect_timeout: 10,
       onnotice: () => {},
