@@ -4,6 +4,8 @@ import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { HeadsetIcon, ReturnIcon, ShieldIcon, TruckIcon } from "@/components/icons";
 import { JsonLd } from "@/components/JsonLd";
 import { getActiveBanners, getCategories, getHomeRails } from "@/lib/catalog";
+import { SaleHero } from "@/components/sale/Festive";
+import { getCurrentSale } from "@/lib/sale";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 
 // Catalogue pages are cached and re-generated at most every 5 minutes.
@@ -17,7 +19,7 @@ const promises = [
 ];
 
 export default async function HomePage() {
-  const [banners, categories, rails] = await Promise.all([getActiveBanners(), getCategories(), getHomeRails()]);
+  const [banners, categories, rails, sale] = await Promise.all([getActiveBanners(), getCategories(), getHomeRails(), getCurrentSale()]);
   const topCategories = categories.filter((c) => !c.parentId);
 
   return (
@@ -33,6 +35,7 @@ export default async function HomePage() {
       />
       <h1 className="sr-only">{SITE_NAME} — shop electronics, fashion, home and accessories</h1>
 
+      {sale && <div className="container-page pt-4 sm:pt-6"><SaleHero sale={sale} /></div>}
       <HeroCarousel banners={banners} />
 
       <section aria-label="Why shop with us" className="container-page pt-6">

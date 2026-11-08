@@ -78,6 +78,9 @@ Use those functions rather than editing order rows directly.
 
 ## Coupons, promotions and banners
 
+**Festive sales (e.g. Diwali):** create a promotion in **Admin → Promotions** with a start and end time and a badge (e.g. "Diwali Dhamaka"). While any promotion runs, the store automatically shows a festive strip with a live countdown on every page, a large sale banner on the home page, a highlighted sale link in the menu, and a `/sale` page listing every discounted product (biggest saving first). Run a storewide percentage plus a bigger one on chosen categories to advertise "Up to X% off" — each product gets its single best offer. Everything disappears by itself when the sale ends. Don't use other companies' event names (e.g. "Big Billion Days" is a Flipkart trademark).
+
+
 - **Promotions** change the price customers pay, everywhere, for the time window you set — no code needed. If two promotions cover an item, the lower price wins. Saving one that would sell anything below its recorded cost is refused unless you tick the confirmation.
 - **Coupons** are typed in at checkout (or tapped, if “show as an offer” is on). Untick “also applies to items already on sale” to stop a coupon stacking with a promotion.
 - **Banners**: upload wide images (about 1600 × 600) and write alt text. Links must point to pages on your store.

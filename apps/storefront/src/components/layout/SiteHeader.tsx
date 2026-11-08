@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { getCategories } from "@/lib/catalog";
+import { getCurrentSale } from "@/lib/sale";
 import { CartIcon, HeartIcon, UserIcon } from "../icons";
 import { Logo } from "./Logo";
 import { MobileMenu } from "./MobileMenu";
@@ -8,7 +9,7 @@ import { SearchBox } from "./SearchBox";
 import { CartBadge } from "./CartBadge";
 
 export async function SiteHeader() {
-  const all = await getCategories();
+  const [all, sale] = await Promise.all([getCategories(), getCurrentSale()]);
   const nav = all
     .filter((c) => !c.parentId)
     .map((c) => ({ slug: c.slug, name: c.name, children: all.filter((s) => s.parentId === c.id).map(({ slug, name }) => ({ slug, name })) }));
@@ -59,6 +60,11 @@ export async function SiteHeader() {
               )}
             </li>
           ))}
+          {sale && (
+            <li>
+              <Link href="/sale" className="inline-flex h-8 items-center rounded-full bg-[#8a1c3d] px-3 text-sm font-bold text-white hover:bg-[#6f1631]">{sale.badge}</Link>
+            </li>
+          )}
           <li className="ml-auto">
             <Link href="/help" className="inline-flex h-11 items-center px-3 text-sm font-semibold text-ink-muted hover:text-brand-700">Help centre</Link>
           </li>

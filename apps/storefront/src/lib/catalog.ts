@@ -555,3 +555,15 @@ export async function getSitemapEntries() {
   ]);
   return { products, categories };
 }
+
+/** Every product with a running promotion, biggest saving first (optionally within a top-level category). */
+export async function getSaleProducts(categorySlug?: string | null): Promise<ProductSummary[]> {
+  const sql = db();
+  return sql<ProductSummary[]>`
+    select ${sql.unsafe(SUMMARY_COLUMNS)} from shop.product_listing pl
+    ${categorySlug ? sql`join shop.categories c on c.id = pl.category_id left join shop.categories pc on pc.id = c.parent_id` : sql``}
+    where pl.promotion_badge is not null
+      ${categorySlug ? sql`and (c.slug = ${categorySlug} or pc.slug = ${categorySlug})` : sql``}
+    order by pl.total_stock > 0 desc, (pl.mrp_paise - pl.min_price_paise)::float8 / nullif(pl.mrp_paise, 0) desc, pl.units_sold desc
+    limit 120`;
+}
