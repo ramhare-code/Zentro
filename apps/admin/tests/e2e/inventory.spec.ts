@@ -73,8 +73,8 @@ test("suppliers, purchase orders with partial receipt, and a stock count reconci
   // movements reference the PO
   await page.goto(`/inventory/movements?q=${poNumber}`);
   await expect(page.locator("tbody tr")).toHaveCount(3);
-  await expect(page.locator("tbody")).toContainText("INV-778");
-  await expect(page.locator("tbody")).toContainText("Ravi Stock");
+  await expect(page.locator("tbody").filter({ hasText: "INV-778" }).first()).toBeVisible();
+  await expect(page.locator("tbody").filter({ hasText: "Ravi Stock" }).first()).toBeVisible();
 
   // inventory dashboard shows cost and value
   await page.goto("/inventory?q=ZN-001-2");

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import {
-  inviteMfaAction, invitePasswordAction, loginAction, mfaAction, reauthAction, type FormState,
+  changePasswordAction, inviteMfaAction, invitePasswordAction, loginAction, mfaAction, reauthAction, type FormState,
 } from "@/lib/actions/auth";
 
 function Submit({ children }: { children: React.ReactNode }) {
@@ -53,6 +53,10 @@ export function MfaForm({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
       <CodeInput />
       <p className="text-xs text-ink-muted">Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
+      <label className="flex items-start gap-2.5 rounded-xl bg-canvas p-3 text-sm">
+        <input type="checkbox" name="remember" defaultChecked className="mt-0.5 size-4 accent-brand-600" />
+        <span><span className="font-semibold">Remember this device for 30 days</span><span className="block text-xs text-ink-muted">You won’t be asked to sign in again on this device. Untick on shared or public computers.</span></span>
+      </label>
       <ErrorBox state={state} />
       <Submit>Verify and sign in</Submit>
       <Link href="/login" className="block text-center text-sm font-semibold text-brand-700 hover:underline">Start again</Link>
@@ -79,12 +83,12 @@ export function InvitePasswordForm({ token }: { token: string }) {
       <input type="hidden" name="token" value={token} />
       <label className="block text-sm font-medium">
         New password
-        <input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" className="input mt-1.5" />
-        <span className="mt-1 block text-xs font-normal text-ink-muted">At least 12 characters. A passphrase of a few unrelated words is strong and memorable.</span>
+        <input name="password" type="password" required minLength={8} maxLength={256} autoComplete="new-password" className="input mt-1.5" />
+        <span className="mt-1 block text-xs font-normal text-ink-muted">At least 8 characters. Letters in any language (English, తెలుగు, हिन्दी…), numbers and symbols all count.</span>
       </label>
       <label className="block text-sm font-medium">
         Confirm password
-        <input name="confirm" type="password" required minLength={12} maxLength={128} autoComplete="new-password" className="input mt-1.5" />
+        <input name="confirm" type="password" required minLength={8} maxLength={256} autoComplete="new-password" className="input mt-1.5" />
       </label>
       <ErrorBox state={state} />
       <Submit>Set password</Submit>
@@ -106,6 +110,23 @@ export function InviteMfaForm({ token, qrSvg, secret }: { token: string; qrSvg: 
       <CodeInput label="Code from your app" />
       <ErrorBox state={state} />
       <Submit>Turn on two-step verification</Submit>
+    </form>
+  );
+}
+
+export function ChangePasswordForm() {
+  const [state, action] = useActionState(changePasswordAction, undefined);
+  return (
+    <form action={action} className="mt-4 grid max-w-md gap-3">
+      <label className="block text-sm font-medium">Current password<input name="current" type="password" required autoComplete="current-password" className="input mt-1.5" /></label>
+      <label className="block text-sm font-medium">New password
+        <input name="password" type="password" required minLength={8} maxLength={256} autoComplete="new-password" className="input mt-1.5" />
+        <span className="mt-1 block text-xs font-normal text-ink-muted">At least 8 characters, in any language.</span>
+      </label>
+      <label className="block text-sm font-medium">Confirm new password<input name="confirm" type="password" required minLength={8} maxLength={256} autoComplete="new-password" className="input mt-1.5" /></label>
+      <ErrorBox state={state} />
+      {state?.ok && <p role="status" className="rounded-xl bg-good-50 px-3.5 py-2.5 text-sm text-good-700">Password changed. Other devices have been signed out.</p>}
+      <Submit>Change password</Submit>
     </form>
   );
 }

@@ -129,7 +129,7 @@ test("finance reconciles payments with Razorpay, retries a failed event and matc
   await page.getByLabel("Order number or Razorpay id").fill(orders.declined.number);
   await page.getByRole("button", { name: "Filter" }).click();
   await expect(page.locator("tbody tr")).toHaveCount(1);
-  await expect(page.locator("tbody")).toContainText("Payment declined by bank");
+  await expect(page.locator("tbody").filter({ hasText: "Payment declined by bank" }).first()).toBeVisible();
 });
 
 test("support staff cannot open payments", async ({ page }) => {

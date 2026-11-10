@@ -11,6 +11,8 @@ import { requestMeta } from "./request";
 export const SESSION_IDLE_MINUTES = 30;
 export const SESSION_MAX_HOURS = 12;
 export const REAUTH_MINUTES = 10;
+/** "Remember this device": stays signed in for this many days without asking again. */
+export const REMEMBER_DAYS = 30;
 
 export function sessionCookieName() {
   return adminEnv().ADMIN_URL.startsWith("https://") ? "__Host-zentro_admin" : "zentro_admin";
@@ -27,19 +29,22 @@ export interface StaffSession {
   reauthAt: Date;
 }
 
-export async function createSession(staffId: string): Promise<void> {
+export async function createSession(staffId: string, remember = false): Promise<void> {
   const token = randomToken(32);
   const { ip, userAgent } = await requestMeta();
+  const hours = remember ? REMEMBER_DAYS * 24 : SESSION_MAX_HOURS;
   await db()`
-    insert into shop.staff_sessions (staff_id, token_hash, expires_at, ip, user_agent)
-    values (${staffId}, ${sha256(token)}, now() + make_interval(hours => ${SESSION_MAX_HOURS}), ${ip}, ${userAgent})`;
+    insert into shop.staff_sessions (staff_id, token_hash, expires_at, ip, user_agent, remember)
+    values (${staffId}, ${sha256(token)}, now() + make_interval(hours => ${hours}), ${ip}, ${userAgent}, ${remember})`;
   const jar = await cookies();
   jar.set(sessionCookieName(), token, {
     httpOnly: true,
     secure: adminEnv().ADMIN_URL.startsWith("https://"),
-    sameSite: "strict",
+    // lax: opening the admin from a link (email, chat app) keeps you signed in;
+    // server actions are still protected by Next.js's same-origin check
+    sameSite: "lax",
     path: "/",
-    maxAge: SESSION_MAX_HOURS * 3600,
+    maxAge: hours * 3600,
   });
 }
 
@@ -60,7 +65,7 @@ export const getSession = cache(async (): Promise<StaffSession | null> => {
     where s.token_hash = ${sha256(token)}
       and s.revoked_at is null
       and s.expires_at > now()
-      and s.last_seen_at > now() - make_interval(mins => ${SESSION_IDLE_MINUTES})
+      and (s.remember or s.last_seen_at > now() - make_interval(mins => ${SESSION_IDLE_MINUTES}))
       and u.status = 'active'`;
   if (!row) return null;
   if (Date.now() - row.lastSeenAt.getTime() > 60_000) {

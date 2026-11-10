@@ -21,6 +21,19 @@ const LOCK_MINUTES = 15;
 const CHALLENGE_COOKIE = "zentro_admin_mfa";
 const RECOVERY_COOKIE = "zentro_admin_rc";
 const GENERIC_LOGIN_ERROR = "Email or password is incorrect, or the account is locked.";
+const MIN_PASSWORD = 8;
+
+/** Password rules shared by set-up and change. Letters from any language count (by character, not byte). */
+function passwordProblem(password: string, confirm: string, email: string): string | null {
+  const n = [...password].length;
+  if (n < MIN_PASSWORD) return `Use at least ${MIN_PASSWORD} characters. Letters in any language, numbers and symbols all count.`;
+  if (n > 128) return "Use at most 128 characters.";
+  if (password !== confirm) return "The two passwords do not match.";
+  const local = email.split("@")[0] ?? "";
+  if (local.length >= 4 && password.toLowerCase().includes(local.toLowerCase())) return "Don’t include your email address in your password.";
+  if (/^(.)\1+$/u.test(password) || /^(?:0123456789|12345678|password|qwerty)/i.test(password)) return "That password is too easy to guess.";
+  return null;
+}
 
 function safeNext(next: FormDataEntryValue | null): string {
   const n = typeof next === "string" ? next : "";
@@ -98,7 +111,7 @@ export async function mfaAction(_prev: FormState, form: FormData): Promise<FormS
   await sql`delete from shop.staff_login_challenges where staff_id = ${c.staffId}`;
   await sql`update shop.staff_users set last_login_at = now() where id = ${c.staffId}`;
   jar.delete(CHALLENGE_COOKIE);
-  await createSession(c.staffId);
+  await createSession(c.staffId, form.get("remember") === "on");
   await audit({ staffId: c.staffId, email: c.email }, { action: "auth.login", details: { method } });
   redirect(safeNext(form.get("next")));
 }
@@ -133,11 +146,8 @@ export async function invitePasswordAction(_prev: FormState, form: FormData): Pr
   if (!invite) return { error: "This invitation is invalid or has expired. Ask the store owner for a new one." };
   const password = String(form.get("password") ?? "");
   const confirm = String(form.get("confirm") ?? "");
-  const local = invite.email.split("@")[0] ?? "";
-  if (password.length < 12 || password.length > 128) return { error: "Use at least 12 characters (a passphrase of 3–4 words works well)." };
-  if (password !== confirm) return { error: "The two passwords do not match." };
-  if (local.length >= 4 && password.toLowerCase().includes(local.toLowerCase())) return { error: "Don’t include your email address in your password." };
-  if (/^(.)\1+$/.test(password) || /^(?:0123456789|password|qwerty)/i.test(password)) return { error: "That password is too easy to guess." };
+  const problem = passwordProblem(password, confirm, invite.email);
+  if (problem) return { error: problem };
 
   const secret = generateTotpSecret();
   await db()`
@@ -174,4 +184,28 @@ export async function inviteMfaAction(_prev: FormState, form: FormData): Promise
     httpOnly: true, sameSite: "strict", path: "/account/recovery-codes", maxAge: 300, secure: adminEnv().ADMIN_URL.startsWith("https://"),
   });
   redirect("/account/recovery-codes");
+}
+
+// ---------------------------------------------------------------- change password
+
+/** Signed-in staff change their own password; other devices are signed out. */
+export async function changePasswordAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const s = await getSession();
+  if (!s) redirect("/login");
+  if (!(await rateLimit(`admin-pwchange:${s.staffId}`, 10, 900))) return { error: "Too many attempts. Try again later." };
+  const current = String(form.get("current") ?? "").slice(0, 200);
+  const password = String(form.get("password") ?? "").slice(0, 600);
+  const sql = db();
+  const [u] = await sql<{ hash: string | null }[]>`select password_hash as hash from shop.staff_users where id = ${s.staffId}`;
+  if (!u?.hash || !(await verifyPassword(current, u.hash))) {
+    await audit(s, { action: "auth.password_change_failed" });
+    return { error: "Your current password is not correct." };
+  }
+  const problem = passwordProblem(password, String(form.get("confirm") ?? "").slice(0, 600), s.email);
+  if (problem) return { error: problem };
+  await sql`update shop.staff_users set password_hash = ${await hashPassword(password)}, password_changed_at = now() where id = ${s.staffId}`;
+  await sql`update shop.staff_sessions set revoked_at = now(), revoked_reason = 'password_changed'
+            where staff_id = ${s.staffId} and id <> ${s.sessionId} and revoked_at is null`;
+  await audit(s, { action: "auth.password_changed" });
+  return { ok: true };
 }
